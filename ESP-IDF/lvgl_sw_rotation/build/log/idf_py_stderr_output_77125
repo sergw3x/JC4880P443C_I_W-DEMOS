@@ -1,0 +1,15 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=0 /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/lvgl_sw_rotation
+CMake Error at /Users/serg/esp/esp-idf-v5.5.1/tools/cmake/build.cmake:629 (message):
+  ERROR: The "path" field in the manifest file
+  "/System/Volumes/Data/home/jczn/esp/JC4880P443/ESP-IDF/lvgl_sw_rotation/components/lvgl__lvgl/idf_component.yml"
+  does not point to a directory.  You can safely remove this field from the
+  manifest if this project is an example copied from a component repository.
+  The dependency will be downloaded from the ESP component registry.
+  Documentation:
+  https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html#override-path
+
+Call Stack (most recent call first):
+  /Users/serg/esp/esp-idf-v5.5.1/tools/cmake/project.cmake:740 (idf_build_process)
+  CMakeLists.txt:7 (project)
+
+

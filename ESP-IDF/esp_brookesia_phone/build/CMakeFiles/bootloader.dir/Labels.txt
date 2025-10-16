@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/CMakeFiles/bootloader
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/CMakeFiles/bootloader.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/CMakeFiles/bootloader-complete.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

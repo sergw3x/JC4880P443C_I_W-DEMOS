@@ -1,0 +1,7 @@
+source "/Users/serg/esp/esp-idf-v5.5.1/components/bootloader/Kconfig.projbuild"
+source "/Users/serg/esp/esp-idf-v5.5.1/components/esp_app_format/Kconfig.projbuild"
+source "/Users/serg/esp/esp-idf-v5.5.1/components/esp_rom/Kconfig.projbuild"
+source "/Users/serg/esp/esp-idf-v5.5.1/components/esptool_py/Kconfig.projbuild"
+source "/Users/serg/esp/esp-idf-v5.5.1/components/partition_table/Kconfig.projbuild"
+source "/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/main/Kconfig.projbuild"
+source "/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/esp_brookesia_phone/components/apps/Kconfig.projbuild"

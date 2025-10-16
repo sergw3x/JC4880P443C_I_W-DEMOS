@@ -1,0 +1,59 @@
+Command: ninja flash
+[1/5] cd /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build/esp-idf/esptool_py && /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build/partition_table/partition-table.bin /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build/video_lcd_display.bin
+video_lcd_display.bin binary size 0x86260 bytes. Smallest app partition is 0x100000 bytes. 0x79da0 bytes (48%) free.
+[2/5] Performing build step for 'bootloader'
+[1/1] cd /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build/bootloader/esp-idf/esptool_py && /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x2000 /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build/bootloader/bootloader.bin
+Bootloader binary size 0x5c20 bytes. 0x3e0 bytes (4%) free.
+[3/5] No install step for 'bootloader'
+[4/5] Completed 'bootloader'
+[4/5] cd /Users/serg/esp/esp-idf-v5.5.1/components/esptool_py && /opt/homebrew/bin/cmake -D IDF_PATH=/Users/serg/esp/esp-idf-v5.5.1 -D "SERIAL_TOOL=/Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python;;/Users/serg/esp/esp-idf-v5.5.1/components/esptool_py/esptool/esptool.py;--chip;esp32p4" -D "SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args" -D WORKING_DIRECTORY=/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/video_lcd_display/build -P /Users/serg/esp/esp-idf-v5.5.1/components/esptool_py/run_serial_tool.cmake
+esptool.py --chip esp32p4 -p /dev/cu.usbmodem101 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 16MB 0x2000 bootloader/bootloader.bin 0x10000 video_lcd_display.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.10.0
+Serial port /dev/cu.usbmodem101
+Connecting...
+Chip is ESP32-P4 (revision v1.3)
+Features: High-Performance MCU
+Crystal is 40MHz
+USB mode: USB-Serial/JTAG
+MAC: 30:ed:a0:e3:0a:9a
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00002000 to 0x00007fff...
+Flash will be erased from 0x00010000 to 0x00096fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+SHA digest in image updated
+Compressed 23584 bytes to 14449...
+Writing at 0x00002000... (100 %)
+Wrote 23584 bytes (14449 compressed) at 0x00002000 in 0.4 seconds (effective 453.2 kbit/s)...
+Hash of data verified.
+Compressed 549472 bytes to 265847...
+Writing at 0x00010000... (5 %)
+Writing at 0x0001e6c5... (11 %)
+Writing at 0x0002ab50... (17 %)
+Writing at 0x00031bbf... (23 %)
+Writing at 0x00038ce0... (29 %)
+Writing at 0x0004085e... (35 %)
+Writing at 0x00048e72... (41 %)
+Writing at 0x00051763... (47 %)
+Writing at 0x00058c38... (52 %)
+Writing at 0x00060aab... (58 %)
+Writing at 0x00067a78... (64 %)
+Writing at 0x0006de50... (70 %)
+Writing at 0x000763ca... (76 %)
+Writing at 0x0007d9a8... (82 %)
+Writing at 0x00084cdd... (88 %)
+Writing at 0x0008bbbc... (94 %)
+Writing at 0x0009345d... (100 %)
+Wrote 549472 bytes (265847 compressed) at 0x00010000 in 4.5 seconds (effective 969.9 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 355.8 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...

@@ -1,0 +1,2 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=0 /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/lvgl_sw_rotation
+warning: user value 68 on the int symbol LWIP_DHCP_OPTIONS_LEN (defined at /Users/serg/esp/esp-idf-v5.5.1/components/lwip/Kconfig:364) ignored due to being outside the active range ([69, 255]) -- falling back on defaults
