@@ -1,0 +1,30 @@
+Command: ninja all
+[1/11] Linking C static library esp-idf/QRCode/libQRCode.a
+[2/11] Performing build step for 'bootloader'
+[1/1] cd /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/bootloader/esp-idf/esptool_py && /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x2000 /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/bootloader/bootloader.bin
+Bootloader binary size 0x5c20 bytes. 0x3e0 bytes (4%) free.
+[3/11] No install step for 'bootloader'
+[4/11] Completed 'bootloader'
+[5/11] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/main/main.c: In function 'app_main':
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/main/main.c:161:9: warning: unused variable 'y_start' [-Wunused-variable]
+  161 |     int y_start = (LCD_V_RES - qr_total_size) / 2;
+      |         ^~~~~~~
+/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/main/main.c:160:9: warning: unused variable 'x_start' [-Wunused-variable]
+  160 |     int x_start = (LCD_H_RES - qr_total_size) / 2;
+      |         ^~~~~~~
+[6/11] Linking C static library esp-idf/main/libmain.a
+[7/11] Generating esp-idf/esp_system/ld/sections.ld
+info: INFO: Symbol BSP_I2S_NUM defined in multiple locations (see below). Please check if this is a correct behavior or a random name match:
+    /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/common_components/espressif__esp32_p4_function_ev_board/Kconfig:30
+    /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/common_components/bsp_extra/Kconfig:2
+[8/11] Building C object CMakeFiles/lvgl_demo_v8.elf.dir/project_elf_src_esp32p4.c.obj
+[9/11] Linking CXX executable lvgl_demo_v8.elf
+[10/11] Generating binary image from built executable
+esptool.py v4.10.0
+Creating esp32p4 image...
+Merged 3 ELF sections
+Successfully created esp32p4 image.
+Generated /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/lvgl_demo_v8.bin
+[11/11] cd /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/esp-idf/esptool_py && /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/partition_table/partition-table.bin /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/lvgl_demo_v8.bin
+lvgl_demo_v8.bin binary size 0x491b0 bytes. Smallest app partition is 0x800000 bytes. 0x7b6e50 bytes (96%) free.
