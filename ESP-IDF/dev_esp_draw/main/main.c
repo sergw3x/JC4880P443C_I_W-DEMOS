@@ -30,29 +30,30 @@ static const char *TAG = "esp_draw_bit";
 #define BSP_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
 // static i2c_master_bus_handle_t i2c_handle = NULL; 
 // static esp_lcd_touch_handle_t ret_touch;
-static SemaphoreHandle_t refresh_finish = NULL;
+//static SemaphoreHandle_t refresh_finish = NULL;
 static esp_lcd_panel_handle_t disp_panel = NULL;
 static lv_disp_draw_buf_t disp_buf;
 static lv_disp_t *lvgl_disp;
 static lv_color_t *buf1;
+static lv_color_t *buf2;
 //#define LVGL_BUFFER_SIZE (LCD_H_RES * LCD_V_RES / 5)
 #define LVGL_BUFFER_SIZE (LCD_H_RES * LCD_V_RES)
 // Глобальные переменные для объектов LVGL
 lv_obj_t *qr_obj = NULL;
 lv_obj_t *label_obj = NULL;
+//lv_obj_t *test_label = NULL;  // ← добавьте это
 
-IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel,
-                                                esp_lcd_dpi_panel_event_data_t *edata,
-                                                void *user_ctx)
-{
-//    lv_disp_drv_t *drv = (lv_disp_drv_t *)user_ctx;
+IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx) {
+    lv_disp_drv_t *drv = (lv_disp_drv_t *)user_ctx;
     BaseType_t need_yield = pdFALSE;
 
     // Сообщаем LVGL, что отрисовка завершена
-//    lv_disp_flush_ready(drv);
+    ESP_EARLY_LOGI(TAG, "DMA done, calling lv_disp_flush_ready");
+    lv_disp_flush_ready(drv);
 
     // Пробуждаем задачу, которая ждет, если она есть (не в вашем случае, но правильно)
-    xSemaphoreGiveFromISR(refresh_finish, &need_yield);
+    // Семафор refresh_finish больше не нужен для LVGL, но если вы его
+//    xSemaphoreGiveFromISR(refresh_finish, &need_yield);
     return (need_yield == pdTRUE);
 }
 static esp_err_t bsp_enable_dsi_phy_power(void) {
@@ -68,6 +69,38 @@ static esp_err_t bsp_enable_dsi_phy_power(void) {
 #endif // BSP_MIPI_DSI_PHY_PWR_LDO_CHAN > 0
     return ESP_OK;
 }
+
+
+
+/**
+ * @brief MIPI DPI configuration structure
+ *
+ * @note  refresh_rate = (dpi_clock_freq_mhz * 1000000) / (h_res + hsync_pulse_width + hsync_back_porch + hsync_front_porch)
+ *                                                      / (v_res + vsync_pulse_width + vsync_back_porch + vsync_front_porch)
+ *
+ * @param[in] px_format Pixel format of the panel
+ *
+ */
+#define ST7701_480_800_PANEL_60HZ_DPI_CONFIG(px_format)  \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 34,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 480,                               \
+            .v_size = 800,                               \
+            .hsync_back_porch = 42,                      \
+            .hsync_pulse_width = 12,                     \
+            .hsync_front_porch = 42,                     \
+            .vsync_back_porch = 8,                      \
+            .vsync_pulse_width = 2,                     \
+            .vsync_front_porch = 166,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+
 const uint16_t white_color = 0xFFFF;
 const uint16_t black_color = 0x0000;
 #define USE_PWM                 1
@@ -128,7 +161,7 @@ void init_lcd(void) {
             .bus_id = 0,
             .num_data_lanes = BSP_LCD_MIPI_DSI_LANE_NUM,
             .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
-            .lane_bit_rate_mbps = 1500,
+            .lane_bit_rate_mbps = 500,
     };
     esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus);
     ESP_LOGI(TAG, "Install MIPI DSI LCD control panel");
@@ -141,7 +174,7 @@ void init_lcd(void) {
     };
     esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &io);
 //    esp_lcd_dpi_panel_config_t dpi_config = ST7701_480_360_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-    esp_lcd_dpi_panel_config_t dpi_config = ST7701_480_360_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+    esp_lcd_dpi_panel_config_t dpi_config = ST7701_480_800_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
     st7701_vendor_config_t vendor_config = {
             .mipi_config = {
                     .dsi_bus = mipi_dsi_bus,
@@ -161,50 +194,24 @@ void init_lcd(void) {
     esp_lcd_panel_reset(disp_panel);
     esp_lcd_panel_init(disp_panel);
     esp_lcd_panel_disp_on_off(disp_panel, true);
-//    esp_lcd_dpi_panel_event_callbacks_t cbs = {
-//            .on_color_trans_done = test_notify_refresh_ready,
-//    };
-//    esp_lcd_dpi_panel_register_event_callbacks(disp_panel, &cbs, lvgl_disp);
 
 }
-void fill_background(uint16_t color) {
-    uint16_t *full_screen_buffer = (uint16_t * )
-    heap_caps_calloc(
-            LCD_H_RES * LCD_V_RES,
-            sizeof(uint16_t),
-            MALLOC_CAP_SPIRAM
-    );
-    if (!full_screen_buffer) {
-        ESP_LOGE(TAG, "Failed to allocate memory for full screen buffer");
-        return;
-    }
-    for (int i = 0; i < LCD_H_RES * LCD_V_RES; i++) {
-        full_screen_buffer[i] = color;
-    }
-    esp_lcd_panel_draw_bitmap(disp_panel, 0, 0, LCD_H_RES, LCD_V_RES, full_screen_buffer);
-    xSemaphoreTake(refresh_finish, portMAX_DELAY);
-    // Освобождение буфера, так как он больше не нужен
-    free(full_screen_buffer);
-}
+
 static void lv_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_p) {
-    ESP_LOGI(TAG, "lv_flush_cb called: x1=%d, y1=%d, x2=%d, y2=%d", area->x1, area->y1, area->x2, area->y2);
+    ESP_LOGI(TAG, "🎨 Flush: %d,%d → %d,%d", area->x1, area->y1, area->x2, area->y2);
 
-    esp_lcd_panel_draw_bitmap(
-            disp_panel,
-            area->x1,
-            area->y1,
-            area->x2 + 1,
-            area->y2 + 1,
-            color_p
-    );
+    esp_lcd_panel_draw_bitmap(disp_panel, area->x1, area->y1, area->x2 + 1, area->y2 + 1, color_p);
 
     // Ждем, пока прерывание (ISR) сообщит нам, что DMA-передача завершена.
     // Эта строка блокирует выполнение задачи до тех пор, пока семафор не будет отдан.
-    xSemaphoreTake(refresh_finish, portMAX_DELAY);
+//    xSemaphoreTake(refresh_finish, portMAX_DELAY);
+
+// Ждём немного, чтобы данные точно ушли (костыль, но для теста OK)
+//    vTaskDelay(pdMS_TO_TICKS(5)); // 5 мс
 
     // Теперь, когда отрисовка гарантированно завершена, сообщаем об этом LVGL.
     // Это разблокирует логику внутри LVGL для отрисовки следующей части экрана.
-    lv_disp_flush_ready(drv);
+//    lv_disp_flush_ready(drv);
 }
 void lvgl_task(void *pvParameter) {
     while (1) {
@@ -221,9 +228,21 @@ void draw_qr_lvgl(const char *data) {
     }
     if (qr_obj == NULL) {
         ESP_LOGI(TAG, "draw_qr_lvgl: qr_obj is null. creating...");
-        qr_obj = lv_qrcode_create(lv_scr_act(), 150, lv_color_black(), lv_color_white());
+        // https://docs.lvgl.io/master/details/libs/qrcode.html
+        qr_obj = lv_qrcode_create(lv_scr_act(), 450, lv_color_black(), lv_color_white());
+        if (qr_obj == NULL) {
+            ESP_LOGE(TAG, "❌ lv_qrcode_create returned NULL! Check LV_USE_QRCODE in lv_conf.h");
+            return;
+        }
+        ESP_LOGI(TAG, "✅ QR object created successfully");
+        ESP_LOGI(TAG, "QR size: %d x %d", lv_obj_get_width(qr_obj), lv_obj_get_height(qr_obj));
         lv_obj_center(qr_obj);
     }
+
+//    if (test_label != NULL) {
+//        lv_obj_add_flag(test_label, LV_OBJ_FLAG_HIDDEN);
+//    }
+
     // Убедиться, что текст скрыт
     if (label_obj != NULL) {
         ESP_LOGI(TAG, "draw_qr_lvgl: qr_obj created");
@@ -238,7 +257,7 @@ void draw_qr_lvgl(const char *data) {
         lv_obj_add_flag(qr_obj, LV_OBJ_FLAG_HIDDEN);
         ESP_LOGI(TAG, "draw_qr_lvgl: qr_obj lv_obj_add_flag LV_OBJ_FLAG_HIDDEN");
     }
-    lv_refr_now(lvgl_disp);
+//    lv_refr_now(lvgl_disp);
 }
 void display_text_lvgl(const char *text) {
     if (lv_scr_act() == NULL) {
@@ -256,15 +275,18 @@ void display_text_lvgl(const char *text) {
     if (qr_obj != NULL) {
         lv_obj_add_flag(qr_obj, LV_OBJ_FLAG_HIDDEN);
     }
-    lv_refr_now(lvgl_disp);
+//    lv_refr_now(lvgl_disp);
 }
 void async_draw_qr(void *data) {
     char *qr_data_str = (char *) data;
     ESP_LOGI(TAG, "async_draw_qr: Starting LVGL QR creation");
-//    xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
 //    lv_obj_clean(lv_scr_act());
     draw_qr_lvgl(qr_data_str);
+
+//    xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+    lv_refr_now(lvgl_disp);
 //    xSemaphoreGive(lvgl_mutex);
+
     ESP_LOGI(TAG, "async_draw_qr: Finished LVGL QR creation");
     free(qr_data_str); // Освободите память после использования
 }
@@ -330,22 +352,47 @@ void usb_rx_task(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
+
+lv_style_t my_style;
+
+void init_lvgl_styles(void) {
+    // Инициализация стиля
+    lv_style_init(&my_style);
+
+    // Установка шрифта. Например, lv_font_montserrat_28
+    // LVGL включает несколько шрифтов по умолчанию.
+    lv_style_set_text_font(&my_style, &lv_font_montserrat_28);
+}
+
 void app_main(void) {
-    refresh_finish = xSemaphoreCreateBinary();
+//    refresh_finish = xSemaphoreCreateBinary();
     init_lcd();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     // Инициализация LVGL
     lv_init();
-
-    uint32_t buf_size = LCD_H_RES * 100; // Рекомендуется выделять буфер на несколько строк
+// Выделяем память для ДВУХ буферов
+    uint32_t buf_size = LCD_H_RES * 250; // Размер одного буфера (на несколько строк)
     buf1 = heap_caps_malloc(buf_size * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
-    if (buf1 == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate LVGL buffer");
+    buf2 = heap_caps_malloc(buf_size * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+
+    if (buf1 == NULL || buf2 == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate LVGL buffers");
+        // Добавим очистку выделенной памяти в случае ошибки
+        if (buf1) free(buf1);
+        if (buf2) free(buf2);
         return;
     }
 
-    lv_disp_draw_buf_init(&disp_buf, buf1, NULL, LCD_H_RES);
+#ifdef LV_USE_QRCODE
+    ESP_LOGI(TAG, "✅ LV_USE_QRCODE is ENABLED");
+#else
+    ESP_LOGE(TAG, "❌ LV_USE_QRCODE is DISABLED");
+#endif
+
+    // Инициализируем двойной буфер для LVGL
+    // Первый аргумент - структура, второй и третий - два буфера, четвертый - размер одного буфера
+    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, buf_size);
 
     lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
@@ -355,17 +402,21 @@ void app_main(void) {
     disp_drv.draw_buf = &disp_buf;
     lvgl_disp = lv_disp_drv_register(&disp_drv);
 
-    // !!! ВОТ ЭТО НУЖНО ДОБАВИТЬ ЗДЕСЬ !!!
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
             .on_color_trans_done = test_notify_refresh_ready,
     };
-    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(disp_panel, &cbs, NULL));
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(disp_panel, &cbs, &disp_drv));
 
     lv_obj_clean(lv_scr_act());
+
     // --- Тестовый код ---
-    lv_obj_t *test_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(test_label, "LVGL OK");
-    lv_obj_center(test_label);
+//    test_label = lv_label_create(lv_scr_act());
+//    lv_obj_set_style_text_align(test_label, LV_TEXT_ALIGN_CENTER, 0);
+//    lv_obj_add_style(test_label, &my_style, 0);
+//    lv_label_set_text(test_label, "LVGL OK");
+//    lv_obj_center(test_label);
+
+
 // --------------------
 //    char *data = "123";
 //    qr_obj = lv_qrcode_create(lv_scr_act(), 150, lv_color_black(), lv_color_white());
