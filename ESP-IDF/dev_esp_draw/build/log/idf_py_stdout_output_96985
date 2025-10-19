@@ -1,0 +1,91 @@
+Command: /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/tools/idf_monitor.py -p /dev/cu.usbmodem1101 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32p4 --revision 1 --decode-panic backtrace /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/lvgl_demo_v8.elf /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/bootloader/bootloader.elf -m '/Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python' '/Users/serg/esp/esp-idf-v5.5.1/tools/idf.py' '-p' '/dev/cu.usbmodem1101'
+ESP-ROM:esp32p4-eco2-20240710
+Build:Jul 10 2024
+rst:0x17 (CHIP_USB_UART_RESET),boot:0xc (SPI_FAST_FLASH_BOOT)
+Core0 Saved PC:0x480537a4
+Core1 Saved PC:0x4fc012c6
+SPI mode:DIO, clock div:1
+load:0x4ff33ce0,len:0x17a8
+load:0x4ff29ed0,len:0xf2c
+load:0x4ff2cbd0,len:0x3470
+entry 0x4ff29eda
+[0;32mI (11) boot: ESP-IDF v5.5.1 2nd stage bootloader[0m
+[0;32mI (11) boot: compile time Oct 18 2025 21:20:22[0m
+[0;32mI (12) boot: Multicore bootloader[0m
+[0;32mI (13) boot: chip revision: v1.3[0m
+[0;32mI (13) boot: efuse block revision: v0.3[0m
+[0;32mI (13) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (14) boot.esp32p4: SPI Speed      : 80MHz[0m
+[0;32mI (14) boot.esp32p4: SPI Mode       : QIO[0m
+[0;32mI (14) boot.esp32p4: SPI Flash Size : 16MB[0m
+[0;32mI (15) boot: Enabling RNG early entropy source...[0m
+[0;32mI (15) boot: Partition Table:[0m
+[0;32mI (15) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (16) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (17) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (17) boot:  2 factory          factory app      00 00 00010000 00800000[0m
+[0;32mI (18) boot:  3 storage          Unknown data     01 82 00810000 00700000[0m
+[0;32mI (19) boot: End of partition table[0m
+[0;32mI (20) esp_image: segment 0: paddr=00010020 vaddr=48060020 size=12c38h ( 76856) map[0m
+[0;32mI (31) esp_image: segment 1: paddr=00022c60 vaddr=30100000 size=00068h (   104) load[0m
+[0;32mI (32) esp_image: segment 2: paddr=00022cd0 vaddr=4ff00000 size=0d348h ( 54088) load[0m
+[0;32mI (41) esp_image: segment 3: paddr=00030020 vaddr=48000020 size=560e0h (352480) map[0m
+[0;32mI (86) esp_image: segment 4: paddr=00086108 vaddr=4ff0d348 size=0af54h ( 44884) load[0m
+[0;32mI (94) esp_image: segment 5: paddr=00091064 vaddr=4ff18300 size=0332ch ( 13100) load[0m
+[0;32mI (97) esp_image: segment 6: paddr=00094398 vaddr=50108080 size=00020h (    32) load[0m
+[0;32mI (104) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (104) boot: Disabling RNG early entropy source...[0m
+[0;32mI (108) hex_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (108) hex_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (109) hex_psram: DriveStr.    : 0x00 (25 Ohm)[0m
+[0;32mI (109) hex_psram: dev id       : 0x03 (generation 4)[0m
+[0;32mI (109) hex_psram: density      : 0x07 (256 Mbit)[0m
+[0;32mI (110) hex_psram: good-die     : 0x06 (Pass)[0m
+[0;32mI (110) hex_psram: SRF          : 0x02 (Slow Refresh)[0m
+[0;32mI (111) hex_psram: BurstType    : 0x00 ( Wrap)[0m
+[0;32mI (111) hex_psram: BurstLen     : 0x03 (2048 Byte)[0m
+[0;32mI (111) hex_psram: BitMode      : 0x01 (X16 Mode)[0m
+[0;32mI (112) hex_psram: Readlatency  : 0x04 (14 cycles@Fixed)[0m
+[0;32mI (112) hex_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (113) MSPI DQS: tuning success, best phase id is 0[0m
+[0;32mI (281) MSPI DQS: tuning success, best delayline id is 17[0m
+I esp_psram: Found 32MB PSRAM device
+I esp_psram: Speed: 200MHz
+[0;32mI (288) mmu_psram: .rodata xip on psram[0m
+[0;32mI (306) mmu_psram: .text xip on psram[0m
+[0;32mI (307) hex_psram: psram CS IO is dedicated[0m
+[0;32mI (307) cpu_start: Multicore app[0m
+[0;32mI (776) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (786) cpu_start: Pro cpu start user code[0m
+[0;32mI (786) cpu_start: cpu freq: 360000000 Hz[0m
+[0;32mI (786) app_init: Application information:[0m
+[0;32mI (787) app_init: Project name:     lvgl_demo_v8[0m
+[0;32mI (787) app_init: App version:      1[0m
+[0;32mI (787) app_init: Compile time:     Oct 18 2025 21:20:02[0m
+[0;32mI (787) app_init: ELF file SHA256:  f35db2d96...[0m
+[0;32mI (787) app_init: ESP-IDF:          v5.5.1[0m
+[0;32mI (788) efuse_init: Min chip rev:     v0.1[0m
+[0;32mI (788) efuse_init: Max chip rev:     v1.99 [0m
+[0;32mI (788) efuse_init: Chip rev:         v1.3[0m
+[0;32mI (788) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (788) heap_init: At 4FF1D3E0 len 0001DBE0 (118 KiB): RAM[0m
+[0;32mI (789) heap_init: At 4FF3AFC0 len 00004BF0 (18 KiB): RAM[0m
+[0;32mI (789) heap_init: At 4FF40000 len 00040000 (256 KiB): RAM[0m
+[0;32mI (789) heap_init: At 501080A0 len 00007F60 (31 KiB): RTCRAM[0m
+[0;32mI (789) heap_init: At 30100068 len 00001F98 (7 KiB): TCM[0m
+[0;32mI (790) esp_psram: Adding pool of 32256K of PSRAM memory to heap allocator[0m
+[0;32mI (790) esp_psram: Adding pool of 39K of PSRAM memory gap generated due to end address alignment of irom to the heap allocator[0m
+[0;32mI (790) esp_psram: Adding pool of 52K of PSRAM memory gap generated due to end address alignment of drom to the heap allocator[0m
+[0;33mW (791) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig[0m
+[0;32mI (791) spi_flash: detected chip: generic[0m
+[0;32mI (792) spi_flash: flash io: qio[0m
+[0;32mI (792) main_task: Started on CPU0[0m
+[0;32mI (793) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (793) main_task: Calling app_main()[0m
+[0;32mI (793) esp_draw_bit: MIPI DSI PHY Powered on[0m
+[0;32mI (795) esp_draw_bit: Install MIPI DSI LCD control panel[0m
+[0;32mI (795) st7701: version: 1.1.3[0m
+[0;32mI (929) st7701_mipi: LCD ID: FF FF FF[0m
+[0;32mI (929) st7701_mipi:  st7701->madctl_val: 0x0, st7701->colmod_val: 0x55[0m
+[0;32mI (1170) esp_draw_bit: Turn on LCD backlight using PWM[0m
+[0;32mI (1176) esp_draw_bit: lv_flush_cb called: x1=0, y1=0, x2=479, y2=799[0m

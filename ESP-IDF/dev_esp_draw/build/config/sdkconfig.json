@@ -780,7 +780,7 @@
     "LV_USE_MSGBOX": true,
     "LV_USE_PERF_MONITOR": true,
     "LV_USE_PNG": false,
-    "LV_USE_QRCODE": false,
+    "LV_USE_QRCODE": true,
     "LV_USE_REFR_DEBUG": false,
     "LV_USE_RLOTTIE": false,
     "LV_USE_ROLLER": true,

@@ -1,0 +1,8 @@
+Command: /Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python /Users/serg/esp/esp-idf-v5.5.1/tools/idf_monitor.py -p /dev/cu.usbmodem1101 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32p4 --revision 1 --decode-panic backtrace /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/lvgl_demo_v8.elf /Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build/bootloader/bootloader.elf -m '/Users/serg/.espressif/python_env/idf5.5_py3.13_env/bin/python' '/Users/serg/esp/esp-idf-v5.5.1/tools/idf.py' '-p' '/dev/cu.usbmodem1101'
+[0;33m--- esp-idf-monitor 1.8.0 on /dev/cu.usbmodem1101 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0m--- 0x4ff0ddda: [0;33ms_do_load_from_flash[0m[0m at [0;32m/Users/serg/esp/esp-idf-v5.5.1/components/esp_psram/xip_impl/mmu_psram_flash_v2.c[0m[0m:[1;31m90[0m
+[0m--- 0x4ff29ed0: [0;33mesp_bootloader_get_description[0m[0m at [0;32m/Users/serg/esp/esp-idf-v5.5.1/components/esp_bootloader_format/esp_bootloader_desc.c[0m[0m:[1;31m39[0m
+[0m--- 0x4ff2cbd0: [0;33mesp_flash_encryption_enabled[0m[0m at [0;32m/Users/serg/esp/esp-idf-v5.5.1/components/bootloader_support/src/flash_encrypt.c[0m[0m:[1;31m89[0m
+[0m--- 0x4ff29eda: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/serg/esp/esp-idf-v5.5.1/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m
