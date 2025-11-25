@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "lvgl_demo_v8",
-    "project_version":    "9d6d1ba7-dirty",
+    "project_version":    "601fc4c7-dirty",
     "project_path":       "/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw",
     "idf_path":           "/Users/serg/esp/esp-idf-v5.5.1",
     "build_dir":          "/Users/serg/Downloads/JC4880P443C_I_W/1-Demo/idf_examples/ESP-IDF/dev_esp_draw/build",

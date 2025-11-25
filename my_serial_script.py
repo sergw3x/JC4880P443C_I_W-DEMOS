@@ -1,7 +1,7 @@
 import serial
 import time
 
-serial_port = '/dev/tty.usbmodem1101'
+serial_port = '/dev/cu.usbmodem1101'
 baud_rate = 9600
 # DATA_TO_SEND = '{"type": "qr", "data": "https://moskvarium.ru"}\n'
 # DATA_TO_SEND = '{"type": "qr", "data": "https://example.com"}\n'
