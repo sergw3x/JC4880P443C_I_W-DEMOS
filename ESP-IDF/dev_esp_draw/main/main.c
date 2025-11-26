@@ -17,9 +17,24 @@
 #include "cJSON.h"
 #include "lvgl.h"
 
+#if LV_USE_QRCODE
+    #include "extra/libs/qrcode/lv_qrcode.h"
+#endif
+
+// LCD Hardware Configuration
+#define LCD_BACKLIGHT                              (GPIO_NUM_23)
+#define LCD_RST                                    (GPIO_NUM_5)
+
+// Разрешение экрана - перемещено выше для использования в функциях
+#define LCD_H_RES                                  (480)       // Horizontal resolution in pixels  
+#define LCD_V_RES                                  (800)       // Vertical resolution in pixels
+
 // Глобальные переменные LVGL
 static lv_obj_t *label_obj = NULL;
 static lv_style_t label_style;
+#if LV_USE_QRCODE
+    static lv_obj_t *qrcode_obj = NULL;
+#endif
 static SemaphoreHandle_t lvgl_mutex = NULL;
 
 // Глобальные переменные дисплея
@@ -53,6 +68,28 @@ static void safe_label_delete(void) {
     }
 }
 
+#if LV_USE_QRCODE
+// Безопасная функция для удаления QR объекта с проверкой мьютекса
+static void safe_qrcode_delete(void) {
+    if (qrcode_obj != NULL) {
+        ESP_LOGI(TAG, "safe_qrcode_delete: Deleting QR object at %p", qrcode_obj);
+        
+        // Проверяем, что объект еще действителен
+        if (lv_obj_is_valid(qrcode_obj)) {
+            ESP_LOGI(TAG, "safe_qrcode_delete: QR object is valid, proceeding with deletion");
+            lv_obj_del(qrcode_obj);
+        } else {
+            ESP_LOGW(TAG, "safe_qrcode_delete: QR object is already invalid (possibly auto-deleted by LVGL)");
+        }
+        
+        qrcode_obj = NULL;
+        ESP_LOGI(TAG, "safe_qrcode_delete: QR object pointer set to NULL");
+    } else {
+        ESP_LOGI(TAG, "safe_qrcode_delete: No QR object to delete");
+    }
+}
+#endif
+
 // Универсальная функция для создания и настройки label объекта
 static bool create_label_with_text(const char *text, lv_color_t bg_color) {
     if (lv_scr_act() == NULL || lvgl_disp == NULL) {
@@ -68,8 +105,13 @@ static bool create_label_with_text(const char *text, lv_color_t bg_color) {
     ESP_LOGI(TAG, "create_label_with_text: Starting with text='%s'", text);
     ESP_LOGI(TAG, "create_label_with_text: Current label_obj state: %p", label_obj);
     
-    // Удаляем существующий объект безопасно ПЕРЕД очисткой экрана
+    // Удаляем существующие объекты безопасно ПЕРЕД очисткой экрана
     safe_label_delete();
+    
+    #if LV_USE_QRCODE
+        // Также удаляем QR объект если он существует
+        safe_qrcode_delete();
+    #endif
     
     // Очищаем экран и устанавливаем фон
     lv_obj_clean(lv_scr_act());
@@ -117,6 +159,95 @@ static bool create_label_with_text(const char *text, lv_color_t bg_color) {
     return true;
 }
 
+// Функция для создания QR-кода с максимальным размером 80% экрана
+static bool create_qr_code(const char *data, lv_color_t qr_color, lv_color_t bg_color) {
+    if (lv_scr_act() == NULL || lvgl_disp == NULL) {
+        ESP_LOGE(TAG, "create_qr_code: LVGL not initialized");
+        return false;
+    }
+    
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        ESP_LOGE(TAG, "create_qr_code: Failed to acquire mutex");
+        return false;
+    }
+    
+    ESP_LOGI(TAG, "create_qr_code: Starting with data='%s'", data);
+    ESP_LOGI(TAG, "create_qr_code: Current qrcode_obj state: %p", qrcode_obj);
+    
+    // Удаляем существующий QR объект безопасно ПЕРЕД очисткой экрана
+    if (qrcode_obj != NULL) {
+        ESP_LOGI(TAG, "create_qr_code: Deleting existing QR object at %p", qrcode_obj);
+        
+        if (lv_obj_is_valid(qrcode_obj)) {
+            ESP_LOGI(TAG, "create_qr_code: QR object is valid, proceeding with deletion");
+            lv_obj_del(qrcode_obj);
+        } else {
+            ESP_LOGW(TAG, "create_qr_code: QR object is already invalid");
+        }
+        
+        qrcode_obj = NULL;
+        ESP_LOGI(TAG, "create_qr_code: QR object pointer set to NULL");
+    }
+    
+    // Очищаем экран и устанавливаем фон
+    lv_obj_clean(lv_scr_act());
+    lv_obj_set_style_bg_color(lv_scr_act(), bg_color, 0);
+    
+    // Вычисляем максимальный размер QR-кода (80% от меньшей стороны экрана)
+    uint16_t screen_width = LCD_H_RES;
+    uint16_t screen_height = LCD_V_RES;
+    uint16_t max_size = (uint16_t)(MIN(screen_width, screen_height) * 0.8);
+    
+    // Обеспечиваем минимальный размер для читаемости
+    if (max_size < 100) {
+        max_size = MIN(screen_width, screen_height);
+    }
+    
+    ESP_LOGI(TAG, "create_qr_code: Screen size: %dx%d, QR size: %d", 
+             screen_width, screen_height, max_size);
+    
+    // Создаем новый QR объект
+    ESP_LOGI(TAG, "create_qr_code: Creating new QR object");
+    qrcode_obj = lv_qrcode_create(lv_scr_act(), max_size, qr_color, bg_color);
+    
+    if (qrcode_obj == NULL) {
+        ESP_LOGE(TAG, "create_qr_code: Failed to create QR object!");
+        xSemaphoreGive(lvgl_mutex);
+        return false;
+    }
+    
+    ESP_LOGI(TAG, "create_qr_code: QR object created successfully at %p", qrcode_obj);
+    
+    // Центрируем QR-код на экране
+    lv_obj_center(qrcode_obj);
+    
+    // Устанавливаем данные QR-кода
+    if (data != NULL && strlen(data) > 0) {
+        ESP_LOGI(TAG, "create_qr_code: Setting QR data to '%s'", data);
+        lv_res_t result = lv_qrcode_update(qrcode_obj, data, strlen(data));
+        
+        if (result != LV_RES_OK) {
+            ESP_LOGE(TAG, "create_qr_code: Failed to update QR data!");
+            lv_obj_del(qrcode_obj);
+            qrcode_obj = NULL;
+            xSemaphoreGive(lvgl_mutex);
+            return false;
+        }
+        
+        ESP_LOGI(TAG, "create_qr_code: QR data updated successfully");
+    } else {
+        ESP_LOGW(TAG, "create_qr_code: Empty data provided for QR code");
+    }
+    
+    // Принудительно обновляем дисплей
+    lv_refr_now(lvgl_disp);
+    
+    xSemaphoreGive(lvgl_mutex);
+    ESP_LOGI(TAG, "create_qr_code: Completed successfully");
+    
+    return true;
+}
+
 // Функция для парсинга hex цвета в формате "#RRGGBB" или "RRGGBB"
 static lv_color_t parse_hex_color(const char *color_str) {
     if (color_str == NULL || strlen(color_str) < 6) {
@@ -153,8 +284,6 @@ static lv_color_t parse_hex_color(const char *color_str) {
 // LCD Hardware Configuration
 #define LCD_BACKLIGHT                              (GPIO_NUM_23)
 #define LCD_RST                                    (GPIO_NUM_5)
-#define LCD_H_RES                                  (480)       // Horizontal resolution in pixels
-#define LCD_V_RES                                  (800)       // Vertical resolution in pixels
 
 // MIPI DSI Configuration
 #define BSP_LCD_MIPI_DSI_LANE_NUM                  (2)         // 2 data lanes
@@ -665,10 +794,8 @@ void process_data(const char *data) {
         if (strcmp(type->valuestring, "qr") == 0) {
             ESP_LOGI(TAG, "Sending a QR rendering command");
             
-            #ifdef LV_USE_QRCODE
-                // Очищаем экран перед созданием нового QR-кода
-                ESP_LOGI(TAG, "Clearing screen before QR creation");
-                lv_obj_clean(lv_scr_act());
+            #if LV_USE_QRCODE
+                ESP_LOGI(TAG, "Creating QR code with data: '%s'", content_copy);
                 
                 // Парсим цвета из JSON (опциональные поля)
                 lv_color_t qr_color = lv_color_black(); // По умолчанию черный
@@ -688,23 +815,27 @@ void process_data(const char *data) {
                          cJSON_IsString(qr_color_json) ? qr_color_json->valuestring : "default",
                          cJSON_IsString(screen_bg_color_json) ? screen_bg_color_json->valuestring : "default");
 
-                ESP_LOGI(TAG, "QR functionality is disabled in this build");
+                // Создаем QR-код используя новую функцию
+                bool success = create_qr_code(content_copy, qr_color, screen_bg_color);
                 
-                // Показываем сообщение об ошибке только если LVGL инициализирован
-                if (lv_scr_act() != NULL && lvgl_disp != NULL) {
-                    ESP_LOGI(TAG, "QR disabled (with colors): Using unified function for label creation");
-                    
-                    bool success = create_label_with_text("QR Code Support Disabled", screen_bg_color);
-                    if (success) {
-                        ESP_LOGI(TAG, "QR disabled (with colors): Label created successfully");
-                    } else {
-                        ESP_LOGE(TAG, "QR disabled (with colors): Failed to create label!");
-                    }
+                if (success) {
+                    ESP_LOGI(TAG, "QR code created successfully");
                 } else {
-                    ESP_LOGW(TAG, "LVGL not initialized, cannot show QR disabled message");
+                    ESP_LOGE(TAG, "Failed to create QR code!");
+                    
+                    // Показываем сообщение об ошибке
+                    if (lv_scr_act() != NULL && lvgl_disp != NULL) {
+                        ESP_LOGI(TAG, "Showing error message");
+                        
+                        bool label_success = create_label_with_text("QR Code Generation Failed", screen_bg_color);
+                        if (label_success) {
+                            ESP_LOGI(TAG, "Error label created successfully");
+                        } else {
+                            ESP_LOGE(TAG, "Failed to create error label!");
+                        }
+                    }
                 }
                 
-                free(content_copy); // Освобождаем память
             #else
                 ESP_LOGI(TAG, "QR code support is disabled in this build");
                 
@@ -717,9 +848,9 @@ void process_data(const char *data) {
                 } else {
                     ESP_LOGE(TAG, "QR disabled: Failed to create label!");
                 }
-                
-                free(content_copy); // Освобождаем память
             #endif
+            
+            free(content_copy); // Освобождаем память
 
         } else if (strcmp(type->valuestring, "text") == 0) {
             ESP_LOGI(TAG, "Sending a text rendering command");
@@ -765,6 +896,13 @@ void process_data(const char *data) {
                 
                 ESP_LOGI(TAG, "Setting white background");
                 lv_obj_set_style_bg_color(lv_scr_act(), lv_color_white(), 0);
+                
+                // Сбрасываем глобальные указатели объектов
+                label_obj = NULL;
+                
+                #if LV_USE_QRCODE
+                    qrcode_obj = NULL;
+                #endif
                 
                 if (lvgl_disp) {
                     ESP_LOGI(TAG, "Triggering display refresh for clear");
@@ -917,6 +1055,7 @@ void app_main(void) {
     /*
      Поддерживаемые JSON команды:
      
+     // QR коды (максимальный размер 80% экрана, ECC L)
      // Базовый QR код (черный на белом)
      {"type": "qr", "data": "https://example.com"}
      
@@ -927,6 +1066,9 @@ void app_main(void) {
      
      // Текстовые команды
      {"type": "text", "data": "Hello World"}
+     
+     // Команда очистки экрана
+     {"type": "clear", "data": ""}
      
      // Примеры цветов:
      // #FF0000 - красный
