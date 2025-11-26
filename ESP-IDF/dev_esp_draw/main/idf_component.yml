@@ -4,3 +4,8 @@ dependencies:
     version: 8.4.*
     public: true
   espressif/cjson: '*'
+  
+  # Отключаем компоненты, которые могут создавать курсоры
+  espressif/esp_lvgl_port:
+    version: "*"
+    public: false

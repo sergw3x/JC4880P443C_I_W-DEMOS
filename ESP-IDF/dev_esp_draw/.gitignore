@@ -1,4 +1,6 @@
 **/squareline/backup/**
 **/squareline/autosave/**
 components/lvgl/**
-./build
+build
+cmake-build-debug
+.idea
