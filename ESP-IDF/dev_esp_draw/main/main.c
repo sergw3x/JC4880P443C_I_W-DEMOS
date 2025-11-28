@@ -165,8 +165,39 @@ static lv_obj_t *qr_text_qrcode_obj = NULL;
 static lv_obj_t *qr_text_label_obj = NULL;
 #endif
 
+/**
+ * @brief Выбирает шрифт LVGL по размеру (локальная версия для main.c)
+ * 
+ * @param font_size Желаемый размер шрифта
+ * @return const lv_font_t* Указатель на шрифт LVGL
+ */
+static const lv_font_t* get_font_by_size_simple(uint16_t font_size) {
+    // LVGL встроенные шрифты
+    switch (font_size) {
+        case 10: return &lv_font_montserrat_10;
+        case 14: return &lv_font_montserrat_14;
+        case 16: return &lv_font_montserrat_16;
+        case 18: return &lv_font_montserrat_18;  // default
+        case 20: return &lv_font_montserrat_20;
+        case 24: return &lv_font_montserrat_24;
+        case 28: return &lv_font_montserrat_28;
+        case 32: return &lv_font_montserrat_32;
+        default:
+            // Автоматический выбор ближайшего доступного размера
+            if (font_size < 14) return &lv_font_montserrat_10;
+            if (font_size > 32) return &lv_font_montserrat_32;
+            
+            // Для промежуточных значений выбираем ближайший
+            if (font_size <= 16) return &lv_font_montserrat_16;
+            if (font_size <= 20) return &lv_font_montserrat_20;
+            if (font_size <= 24) return &lv_font_montserrat_24;
+            if (font_size <= 28) return &lv_font_montserrat_28;
+            return &lv_font_montserrat_32;
+    }
+}
+
 // Функция для создания QR кода с текстом (упрощенная версия для main.c)
-static bool create_qr_with_text_simple(const char *qr_data, const char *text_data, lv_color_t qr_color, lv_color_t bg_color, lv_color_t text_color) {
+static bool create_qr_with_text_simple(const char *qr_data, const char *text_data, lv_color_t qr_color, lv_color_t bg_color, lv_color_t text_color, uint16_t font_size) {
     if (lv_scr_act() == NULL || lvgl_disp == NULL) {
         ESP_LOGE(TAG, "create_qr_with_text_simple: LVGL not initialized");
         return false;
@@ -270,6 +301,13 @@ static bool create_qr_with_text_simple(const char *qr_data, const char *text_dat
         lv_style_t label_style;
         lv_style_init(&label_style);
         lv_style_set_text_align(&label_style, LV_TEXT_ALIGN_CENTER);
+        
+        // Устанавливаем размер шрифта
+        const lv_font_t* selected_font = get_font_by_size_simple(font_size);
+        lv_style_set_text_font(&label_style, selected_font);
+        
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Using font size %u (font: %p)", font_size, selected_font);
+        
         lv_obj_add_style(qr_text_label_obj, &label_style, 0);
         
         // Устанавливаем цвет текста
@@ -1048,8 +1086,30 @@ void process_data(const char *data) {
                     text_color = parse_hex_color(text_color_json->valuestring);
                 }
                 
+                // Парсим размер шрифта (опционально)
+                uint16_t font_size = 18; // По умолчанию
+                cJSON *font_size_json = cJSON_GetObjectItemCaseSensitive(root, "font_size");
+                if (cJSON_IsNumber(font_size_json)) {
+                    uint16_t requested_size = (uint16_t)font_size_json->valuedouble;
+                    
+                    // Валидация диапазона размера шрифта
+                    if (requested_size < 10) {
+                        ESP_LOGW(TAG, "Font size %u too small, using minimum 10", requested_size);
+                        font_size = 10;
+                    } else if (requested_size > 32) {
+                        ESP_LOGW(TAG, "Font size %u too large, using maximum 32", requested_size);
+                        font_size = 32;
+                    } else {
+                        font_size = requested_size;
+                    }
+                    
+                    ESP_LOGI(TAG, "Font size set to %u", font_size);
+                } else {
+                    ESP_LOGI(TAG, "Using default font size 18");
+                }
+                
                 // Создаем QR код с текстом
-                bool success = create_qr_with_text_simple(content_copy, qr_text_data, qr_color, screen_bg_color, text_color);
+                bool success = create_qr_with_text_simple(content_copy, qr_text_data, qr_color, screen_bg_color, text_color, font_size);
                 
                 // Освобождаем память
                 if (qr_text_data != NULL) {
