@@ -8,6 +8,7 @@
 #include "text_commands.h"
 #include "qr_commands.h" 
 #include "clear_commands.h"
+#include "qr_text_commands.h"
 
 static const char *TAG = "command_processor";
 
@@ -64,6 +65,10 @@ esp_err_t process_command(const char *data) {
         // QR команда
         ESP_LOGI(TAG, "Routing to qr_commands module");
         result = execute_qr_command(data); // Передаем весь JSON для доступа к цветам
+    } else if (strcmp(command_type, "qr_text") == 0) {
+        // QR+текст команда
+        ESP_LOGI(TAG, "Routing to qr_text_commands module");
+        result = execute_qr_text_command(data); // Передаем весь JSON для доступа к цветам и тексту
     } else if (strcmp(command_type, "clear") == 0) {
         // Команда очистки
         ESP_LOGI(TAG, "Routing to clear_commands module");

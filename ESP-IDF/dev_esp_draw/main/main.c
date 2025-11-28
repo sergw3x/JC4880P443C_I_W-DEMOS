@@ -159,6 +159,137 @@ static bool create_label_with_text(const char *text, lv_color_t bg_color) {
     return true;
 }
 
+// Глобальные переменные для QR+Text (определены здесь для использования в main.c)
+#if LV_USE_QRCODE
+static lv_obj_t *qr_text_qrcode_obj = NULL;
+static lv_obj_t *qr_text_label_obj = NULL;
+#endif
+
+// Функция для создания QR кода с текстом (упрощенная версия для main.c)
+static bool create_qr_with_text_simple(const char *qr_data, const char *text_data, lv_color_t qr_color, lv_color_t bg_color, lv_color_t text_color) {
+    if (lv_scr_act() == NULL || lvgl_disp == NULL) {
+        ESP_LOGE(TAG, "create_qr_with_text_simple: LVGL not initialized");
+        return false;
+    }
+    
+    if (xSemaphoreTake(lvgl_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        ESP_LOGE(TAG, "create_qr_with_text_simple: Failed to acquire mutex");
+        return false;
+    }
+    
+    ESP_LOGI(TAG, "create_qr_with_text_simple: Starting");
+    ESP_LOGI(TAG, "QR data: '%s', Text: '%s'", qr_data ? qr_data : "NULL", text_data ? text_data : "NULL");
+    
+    // Удаляем существующие объекты
+    if (qr_text_qrcode_obj != NULL) {
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Deleting existing QR object");
+        if (lv_obj_is_valid(qr_text_qrcode_obj)) {
+            lv_obj_del(qr_text_qrcode_obj);
+        }
+        qr_text_qrcode_obj = NULL;
+    }
+    
+    if (qr_text_label_obj != NULL) {
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Deleting existing label object");
+        if (lv_obj_is_valid(qr_text_label_obj)) {
+            lv_obj_del(qr_text_label_obj);
+        }
+        qr_text_label_obj = NULL;
+    }
+    
+    // Очищаем экран и устанавливаем фон
+    lv_obj_clean(lv_scr_act());
+    lv_obj_set_style_bg_color(lv_scr_act(), bg_color, 0);
+    
+    // Получаем размеры экрана
+    uint16_t screen_width = LCD_H_RES;
+    uint16_t screen_height = LCD_V_RES;
+    
+    // Вычисляем размеры и позиции
+    uint16_t qr_size = (uint16_t)(screen_width * 0.7);  // 70% ширины экрана
+    uint16_t qr_y = screen_height * 0.2;                // QR код на 20% от верха
+    uint16_t text_y = qr_y + qr_size + 30;              // Текст под QR кодом с отступом
+    
+    // Ограничиваем минимальные размеры
+    if (qr_size > screen_width * 0.8) qr_size = (uint16_t)(screen_width * 0.8);
+    if (qr_y < 10) qr_y = 10;
+    
+#if LV_USE_QRCODE
+    // Создаем QR код
+    ESP_LOGI(TAG, "create_qr_with_text_simple: Creating QR code object");
+    qr_text_qrcode_obj = lv_qrcode_create(lv_scr_act(), qr_size, qr_color, bg_color);
+    
+    if (qr_text_qrcode_obj == NULL) {
+        ESP_LOGE(TAG, "create_qr_with_text_simple: Failed to create QR object!");
+        xSemaphoreGive(lvgl_mutex);
+        return false;
+    }
+    
+    // Позиционируем QR код
+    lv_obj_set_pos(qr_text_qrcode_obj, (screen_width - qr_size) / 2, qr_y);
+    
+    // Устанавливаем данные QR-кода
+    if (qr_data != NULL && strlen(qr_data) > 0) {
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Setting QR data to '%s'", qr_data);
+        lv_res_t result = lv_qrcode_update(qr_text_qrcode_obj, qr_data, strlen(qr_data));
+        
+        if (result != LV_RES_OK) {
+            ESP_LOGE(TAG, "create_qr_with_text_simple: Failed to update QR data!");
+            lv_obj_del(qr_text_qrcode_obj);
+            qr_text_qrcode_obj = NULL;
+            xSemaphoreGive(lvgl_mutex);
+            return false;
+        }
+        
+        ESP_LOGI(TAG, "create_qr_with_text_simple: QR data updated successfully");
+    }
+#endif
+    
+    // Создаем текстовый объект
+    if (text_data != NULL && strlen(text_data) > 0) {
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Creating label object");
+        
+        qr_text_label_obj = lv_label_create(lv_scr_act());
+        if (qr_text_label_obj == NULL) {
+            ESP_LOGE(TAG, "create_qr_with_text_simple: Failed to create label object!");
+#if LV_USE_QRCODE
+            if (qr_text_qrcode_obj != NULL) {
+                lv_obj_del(qr_text_qrcode_obj);
+                qr_text_qrcode_obj = NULL;
+            }
+#endif
+            xSemaphoreGive(lvgl_mutex);
+            return false;
+        }
+        
+        // Настраиваем текстовый объект
+        lv_obj_set_width(qr_text_label_obj, screen_width - 40); // Отступы по бокам
+        lv_obj_set_pos(qr_text_label_obj, 20, text_y);
+        
+        // Устанавливаем выравнивание и стиль
+        lv_style_t label_style;
+        lv_style_init(&label_style);
+        lv_style_set_text_align(&label_style, LV_TEXT_ALIGN_CENTER);
+        lv_obj_add_style(qr_text_label_obj, &label_style, 0);
+        
+        // Устанавливаем цвет текста
+        lv_obj_set_style_text_color(qr_text_label_obj, text_color, 0);
+        
+        // Устанавливаем текст
+        lv_label_set_text(qr_text_label_obj, text_data);
+        
+        ESP_LOGI(TAG, "create_qr_with_text_simple: Label created with text '%s'", text_data);
+    }
+    
+    // Принудительно обновляем дисплей
+    lv_refr_now(lvgl_disp);
+    
+    xSemaphoreGive(lvgl_mutex);
+    ESP_LOGI(TAG, "create_qr_with_text_simple: Completed successfully");
+    
+    return true;
+}
+
 // Функция для создания QR-кода с максимальным размером 80% экрана
 static bool create_qr_code(const char *data, lv_color_t qr_color, lv_color_t bg_color) {
     if (lv_scr_act() == NULL || lvgl_disp == NULL) {
@@ -884,6 +1015,76 @@ void process_data(const char *data) {
                 ESP_LOGW(TAG, "LVGL not initialized, cannot display text");
                 free(content_copy);
             }
+        } else if (strcmp(type->valuestring, "qr_text") == 0) {
+            ESP_LOGI(TAG, "QR+Text command received");
+            
+            #if LV_USE_QRCODE
+                ESP_LOGI(TAG, "Creating QR code with text - QR: '%s'", content_copy);
+                
+                // Парсим дополнительные параметры из JSON
+                cJSON *text_json = cJSON_GetObjectItemCaseSensitive(root, "text");
+                char *qr_text_data = NULL;
+                if (cJSON_IsString(text_json) && text_json->valuestring != NULL) {
+                    qr_text_data = strdup(text_json->valuestring);
+                }
+                
+                // Парсим цвета из JSON (опциональные поля)
+                lv_color_t qr_color = lv_color_black(); // По умолчанию черный
+                lv_color_t screen_bg_color = lv_color_white(); // По умолчанию белый
+                lv_color_t text_color = lv_palette_main(LV_PALETTE_BLUE); // По умолчанию синий
+                
+                cJSON *qr_color_json = cJSON_GetObjectItemCaseSensitive(root, "qr_color");
+                if (cJSON_IsString(qr_color_json)) {
+                    qr_color = parse_hex_color(qr_color_json->valuestring);
+                }
+                
+                cJSON *bg_color_json = cJSON_GetObjectItemCaseSensitive(root, "bg_color");
+                if (cJSON_IsString(bg_color_json)) {
+                    screen_bg_color = parse_hex_color(bg_color_json->valuestring);
+                }
+                
+                cJSON *text_color_json = cJSON_GetObjectItemCaseSensitive(root, "text_color");
+                if (cJSON_IsString(text_color_json)) {
+                    text_color = parse_hex_color(text_color_json->valuestring);
+                }
+                
+                // Создаем QR код с текстом
+                bool success = create_qr_with_text_simple(content_copy, qr_text_data, qr_color, screen_bg_color, text_color);
+                
+                // Освобождаем память
+                if (qr_text_data != NULL) {
+                    free(qr_text_data);
+                }
+                
+                if (success) {
+                    ESP_LOGI(TAG, "QR code with text created successfully");
+                } else {
+                    ESP_LOGE(TAG, "Failed to create QR code with text!");
+                    
+                    // Показываем сообщение об ошибке
+                    if (lv_scr_act() != NULL && lvgl_disp != NULL) {
+                        bool label_success = create_label_with_text("QR+Text Generation Failed", screen_bg_color);
+                        if (label_success) {
+                            ESP_LOGI(TAG, "Error label created successfully");
+                        } else {
+                            ESP_LOGE(TAG, "Failed to create error label!");
+                        }
+                    }
+                }
+                
+            #else
+                ESP_LOGI(TAG, "QR code support is disabled in this build");
+                
+                // Показываем сообщение об ошибке
+                bool success = create_label_with_text("QR Code Support Disabled", lv_color_white());
+                if (success) {
+                    ESP_LOGI(TAG, "QR disabled: Label created successfully");
+                } else {
+                    ESP_LOGE(TAG, "QR disabled: Failed to create label!");
+                }
+            #endif
+            
+            free(content_copy); // Освобождаем память
         } else if (strcmp(type->valuestring, "clear") == 0) {
             ESP_LOGI(TAG, "Clearing screen command received");
             
@@ -902,6 +1103,8 @@ void process_data(const char *data) {
                 
                 #if LV_USE_QRCODE
                     qrcode_obj = NULL;
+                    qr_text_qrcode_obj = NULL;
+                    qr_text_label_obj = NULL;
                 #endif
                 
                 if (lvgl_disp) {
@@ -1064,6 +1267,10 @@ void app_main(void) {
      {"type": "qr", "data": "123", "qr_color": "#0000FF"}
      {"type": "qr", "data": "test", "bg_color": "#FFFF00"}
      
+     // QR код с текстом (новая функция!)
+     {"type": "qr_text", "data": "https://example.com", "text": "Visit our website!"}
+     {"type": "qr_text", "data": "product-12345", "text": "Product Info", "qr_color": "#FF0000", "bg_color": "#FFFF00", "text_color": "#0000FF"}
+     
      // Текстовые команды
      {"type": "text", "data": "Hello World"}
      
@@ -1080,6 +1287,11 @@ void app_main(void) {
      
      char *qr_data = "236299fc-ebb7-42f0-8064-a68d794df943";
      https://www.meme-arsenal.com/memes/648da849201ad7d325466cc03afb2703.jpg
+     
+     // QR+Text Layout:
+     // - QR код: 70% ширины экрана, позиция 20% от верха
+     // - Текст: под QR кодом с отступом 30px, центрирование
+     // - Максимальная ширина текста: экран - 40px (отступы по бокам)
     */
 
     // Create LVGL mutex

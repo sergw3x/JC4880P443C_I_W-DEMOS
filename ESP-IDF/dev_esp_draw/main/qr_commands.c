@@ -132,6 +132,9 @@ bool create_qr_code(const char *data, lv_color_t qr_color, lv_color_t bg_color) 
         ESP_LOGI(TAG, "create_qr_code: QR object pointer set to NULL");
     }
     
+    // Также удаляем QR+текст объекты если они существуют
+    safe_qr_text_delete();
+    
     // Очищаем экран и устанавливаем фон
     clear_screen_with_background(bg_color);
     
@@ -197,4 +200,3 @@ void async_draw_qr(void *data) {
         free(data);
     }
 }
-

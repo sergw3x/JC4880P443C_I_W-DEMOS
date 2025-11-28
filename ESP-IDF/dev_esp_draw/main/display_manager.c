@@ -1,6 +1,9 @@
 #include "display_manager.h"
 #include "lvgl_utils.h"
 #include "esp_log.h"
+#if LV_USE_QRCODE
+#include "qr_text_commands.h"
+#endif
 
 static const char *TAG = "display_manager";
 
@@ -35,6 +38,8 @@ bool create_label_with_text(const char *text, lv_color_t bg_color) {
 #if LV_USE_QRCODE
     // Также удаляем QR объект если он существует
     safe_qrcode_delete();
+    // И QR+текст объекты
+    safe_qr_text_delete();
 #endif
     
     // Очищаем экран и устанавливаем фон
@@ -136,6 +141,37 @@ void safe_qrcode_delete(void) {
     } else {
         ESP_LOGI(TAG, "safe_qrcode_delete: No QR object to delete");
     }
+}
+
+void safe_qr_text_delete(void) {
+    // Удаляем QR+текст объекты из qr_text_commands модуля
+    if (qr_text_qrcode_obj != NULL) {
+        ESP_LOGI(TAG, "safe_qr_text_delete: Deleting QR+Text QR object at %p", qr_text_qrcode_obj);
+        
+        if (is_lvgl_object_valid(qr_text_qrcode_obj)) {
+            ESP_LOGI(TAG, "safe_qr_text_delete: QR+Text QR object is valid, proceeding with deletion");
+            lv_obj_del(qr_text_qrcode_obj);
+        } else {
+            ESP_LOGW(TAG, "safe_qr_text_delete: QR+Text QR object is already invalid");
+        }
+        
+        qr_text_qrcode_obj = NULL;
+    }
+    
+    if (qr_text_label_obj != NULL) {
+        ESP_LOGI(TAG, "safe_qr_text_delete: Deleting QR+Text label object at %p", qr_text_label_obj);
+        
+        if (is_lvgl_object_valid(qr_text_label_obj)) {
+            ESP_LOGI(TAG, "safe_qr_text_delete: QR+Text label object is valid, proceeding with deletion");
+            lv_obj_del(qr_text_label_obj);
+        } else {
+            ESP_LOGW(TAG, "safe_qr_text_delete: QR+Text label object is already invalid");
+        }
+        
+        qr_text_label_obj = NULL;
+    }
+    
+    ESP_LOGI(TAG, "safe_qr_text_delete: QR+Text objects cleanup completed");
 }
 #endif
 

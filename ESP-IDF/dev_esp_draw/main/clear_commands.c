@@ -3,6 +3,9 @@
 #include "lvgl_utils.h"
 #include "text_commands.h"
 #include "qr_commands.h"
+#if LV_USE_QRCODE
+#include "qr_text_commands.h"
+#endif
 #include "esp_log.h"
 
 static const char *TAG = "clear_commands";
@@ -32,6 +35,8 @@ esp_err_t execute_clear_command(void) {
         
 #if LV_USE_QRCODE
         qrcode_obj = NULL;
+        qr_text_qrcode_obj = NULL;
+        qr_text_label_obj = NULL;
 #endif
         
         // Принудительно обновляем дисплей

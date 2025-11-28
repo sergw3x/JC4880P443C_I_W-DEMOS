@@ -43,6 +43,11 @@ void safe_label_delete(void);
 void safe_qrcode_delete(void);
 
 /**
+ * @brief Безопасно удаляет QR+текст объекты
+ */
+void safe_qr_text_delete(void);
+
+/**
  * @brief Принудительно обновляет дисплей
  */
 void refresh_display(void);
