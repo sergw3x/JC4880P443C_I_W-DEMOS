@@ -12,8 +12,9 @@ static const char *TAG = "qr_text_commands";
 lv_obj_t *qr_text_qrcode_obj = NULL;
 lv_obj_t *qr_text_label_obj = NULL;
 
-// Forward declaration
+// Forward declarations
 static const lv_font_t* get_font_by_size(uint16_t font_size);
+static char* process_text_formatting(const char *text);
 
 esp_err_t execute_qr_text_command(const char *json_string) {
     ESP_LOGI(TAG, "Executing QR+Text command with JSON: %s", json_string);
@@ -182,7 +183,7 @@ bool create_qr_with_text(const qr_text_params_t *params) {
         // Устанавливаем выравнивание и стиль
         lv_style_t label_style;
         lv_style_init(&label_style);
-        lv_style_set_text_align(&label_style, LV_TEXT_ALIGN_CENTER);
+        lv_style_set_text_align(&label_style, params->text_align);
         
         // Устанавливаем размер шрифта
         const lv_font_t* selected_font = get_font_by_size(params->font_size);
@@ -195,8 +196,16 @@ bool create_qr_with_text(const qr_text_params_t *params) {
         // Устанавливаем цвет текста
         lv_obj_set_style_text_color(qr_text_label_obj, params->text_color, 0);
         
-        // Устанавливаем текст
-        lv_label_set_text(qr_text_label_obj, params->text);
+        // Обрабатываем текст (заменяем {newline} на реальные переносы строк)
+        char *processed_text = process_text_formatting(params->text);
+        
+        // Устанавливаем обработанный текст
+        lv_label_set_text(qr_text_label_obj, processed_text ? processed_text : params->text);
+        
+        // Освобождаем память обработанного текста
+        if (processed_text != NULL) {
+            free(processed_text);
+        }
         
         ESP_LOGI(TAG, "create_qr_with_text: Label created with text '%s'", params->text);
     }
@@ -262,6 +271,7 @@ bool parse_qr_text_json(const char *json_string, qr_text_params_t *params) {
     params->bg_color = lv_color_white();
     params->text_color = lv_palette_main(LV_PALETTE_BLUE);
     params->font_size = 18; // Размер шрифта по умолчанию
+    params->text_align = LV_TEXT_ALIGN_CENTER; // Выравнивание текста по умолчанию
     
     cJSON *root = cJSON_Parse(json_string);
     if (root == NULL) {
@@ -322,6 +332,27 @@ bool parse_qr_text_json(const char *json_string, qr_text_params_t *params) {
         ESP_LOGI(TAG, "parse_qr_text_json: Using default font size 18");
     }
     
+    // Извлекаем выравнивание текста (опционально)
+    cJSON *text_align_json = cJSON_GetObjectItemCaseSensitive(root, "text_align");
+    if (cJSON_IsString(text_align_json) && text_align_json->valuestring != NULL) {
+        const char *align_str = text_align_json->valuestring;
+        
+        if (strcmp(align_str, "left") == 0) {
+            params->text_align = LV_TEXT_ALIGN_LEFT;
+        } else if (strcmp(align_str, "center") == 0) {
+            params->text_align = LV_TEXT_ALIGN_CENTER;
+        } else if (strcmp(align_str, "right") == 0) {
+            params->text_align = LV_TEXT_ALIGN_RIGHT;
+        } else {
+            ESP_LOGW(TAG, "parse_qr_text_json: Invalid text_align '%s', using default center", align_str);
+            params->text_align = LV_TEXT_ALIGN_CENTER;
+        }
+        
+        ESP_LOGI(TAG, "parse_qr_text_json: Text align set to %s", align_str);
+    } else {
+        ESP_LOGI(TAG, "parse_qr_text_json: Using default text align center");
+    }
+    
     cJSON_Delete(root);
     
     ESP_LOGI(TAG, "parse_qr_text_json: Parsed successfully - QR data: '%s', Text: '%s'", 
@@ -345,4 +376,59 @@ void free_qr_text_params(qr_text_params_t *params) {
         free(params->text);
         params->text = NULL;
     }
+}
+
+/**
+ * @brief Обрабатывает текст, заменяя маркеры {newline} на реальные переносы строк
+ * 
+ * @param text Исходный текст с маркерами {newline}
+ * @return char* Обработанный текст с переносами строк (нужно освободить память)
+ */
+static char* process_text_formatting(const char *text) {
+    if (text == NULL) {
+        return NULL;
+    }
+    
+    // Подсчитываем количество маркеров {newline}
+    size_t newline_count = 0;
+    const char *pos = text;
+    while ((pos = strstr(pos, "{newline}")) != NULL) {
+        newline_count++;
+        pos += 9; // Длина строки "{newline}"
+    }
+    
+    // Если маркеров нет, возвращаем копию исходного текста
+    if (newline_count == 0) {
+        return strdup(text);
+    }
+    
+    // Вычисляем новую длину строки
+    size_t original_len = strlen(text);
+    size_t new_len = original_len - (newline_count * 9) + newline_count; // Заменяем "{newline}" на "\n"
+    
+    // Выделяем память для новой строки
+    char *processed_text = malloc(new_len + 1);
+    if (processed_text == NULL) {
+        ESP_LOGE(TAG, "process_text_formatting: Failed to allocate memory for processed text");
+        return NULL;
+    }
+    
+    // Копируем и заменяем маркеры
+    const char *src = text;
+    char *dst = processed_text;
+    
+    while (*src != '\0') {
+        if (strncmp(src, "{newline}", 9) == 0) {
+            *dst++ = '\n';
+            src += 9;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    
+    *dst = '\0';
+    
+    ESP_LOGI(TAG, "process_text_formatting: Processed text with %zu newlines", newline_count);
+    
+    return processed_text;
 }

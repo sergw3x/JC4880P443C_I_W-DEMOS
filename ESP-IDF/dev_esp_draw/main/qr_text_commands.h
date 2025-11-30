@@ -10,11 +10,12 @@
  */
 typedef struct {
     char *qr_data;          // Данные для QR кода
-    char *text;             // Текст для отображения
+    char *text;             // Текст для отображения (поддерживает {newline} для переносов строк)
     lv_color_t qr_color;    // Цвет QR кода
     lv_color_t bg_color;    // Цвет фона
     lv_color_t text_color;  // Цвет текста
     uint16_t font_size;     // Размер шрифта текста (10-32px, по умолчанию 18)
+    lv_text_align_t text_align; // Выравнивание текста (по умолчанию LV_TEXT_ALIGN_CENTER)
 } qr_text_params_t;
 
 // Глобальные переменные для доступа из других модулей

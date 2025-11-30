@@ -196,8 +196,11 @@ static const lv_font_t* get_font_by_size_simple(uint16_t font_size) {
     }
 }
 
+// Forward declaration for text formatting function
+static char* process_text_formatting_simple(const char *text);
+
 // Функция для создания QR кода с текстом (упрощенная версия для main.c)
-static bool create_qr_with_text_simple(const char *qr_data, const char *text_data, lv_color_t qr_color, lv_color_t bg_color, lv_color_t text_color, uint16_t font_size) {
+static bool create_qr_with_text_simple(const char *qr_data, const char *text_data, lv_color_t qr_color, lv_color_t bg_color, lv_color_t text_color, uint16_t font_size, lv_text_align_t text_align) {
     if (lv_scr_act() == NULL || lvgl_disp == NULL) {
         ESP_LOGE(TAG, "create_qr_with_text_simple: LVGL not initialized");
         return false;
@@ -300,7 +303,7 @@ static bool create_qr_with_text_simple(const char *qr_data, const char *text_dat
         // Устанавливаем выравнивание и стиль
         lv_style_t label_style;
         lv_style_init(&label_style);
-        lv_style_set_text_align(&label_style, LV_TEXT_ALIGN_CENTER);
+        lv_style_set_text_align(&label_style, text_align);
         
         // Устанавливаем размер шрифта
         const lv_font_t* selected_font = get_font_by_size_simple(font_size);
@@ -313,8 +316,16 @@ static bool create_qr_with_text_simple(const char *qr_data, const char *text_dat
         // Устанавливаем цвет текста
         lv_obj_set_style_text_color(qr_text_label_obj, text_color, 0);
         
-        // Устанавливаем текст
-        lv_label_set_text(qr_text_label_obj, text_data);
+        // Обрабатываем текст (заменяем {newline} на реальные переносы строк)
+        char *processed_text = process_text_formatting_simple(text_data);
+        
+        // Устанавливаем обработанный текст
+        lv_label_set_text(qr_text_label_obj, processed_text ? processed_text : text_data);
+        
+        // Освобождаем память обработанного текста
+        if (processed_text != NULL) {
+            free(processed_text);
+        }
         
         ESP_LOGI(TAG, "create_qr_with_text_simple: Label created with text '%s'", text_data);
     }
@@ -448,6 +459,61 @@ static lv_color_t parse_hex_color(const char *color_str) {
     ESP_LOGI("parse_hex_color", "Parsed color %s -> RGB(%d,%d,%d)", color_str, r, g, b);
     
     return lv_color_make(r, g, b);
+}
+
+/**
+ * @brief Обрабатывает текст, заменяя маркеры {newline} на реальные переносы строк (упрощенная версия для main.c)
+ * 
+ * @param text Исходный текст с маркерами {newline}
+ * @return char* Обработанный текст с переносами строк (нужно освободить память)
+ */
+static char* process_text_formatting_simple(const char *text) {
+    if (text == NULL) {
+        return NULL;
+    }
+    
+    // Подсчитываем количество маркеров {newline}
+    size_t newline_count = 0;
+    const char *pos = text;
+    while ((pos = strstr(pos, "{newline}")) != NULL) {
+        newline_count++;
+        pos += 9; // Длина строки "{newline}"
+    }
+    
+    // Если маркеров нет, возвращаем копию исходного текста
+    if (newline_count == 0) {
+        return strdup(text);
+    }
+    
+    // Вычисляем новую длину строки
+    size_t original_len = strlen(text);
+    size_t new_len = original_len - (newline_count * 9) + newline_count; // Заменяем "{newline}" на "\n"
+    
+    // Выделяем память для новой строки
+    char *processed_text = malloc(new_len + 1);
+    if (processed_text == NULL) {
+        ESP_LOGE(TAG, "process_text_formatting_simple: Failed to allocate memory for processed text");
+        return NULL;
+    }
+    
+    // Копируем и заменяем маркеры
+    const char *src = text;
+    char *dst = processed_text;
+    
+    while (*src != '\0') {
+        if (strncmp(src, "{newline}", 9) == 0) {
+            *dst++ = '\n';
+            src += 9;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    
+    *dst = '\0';
+    
+    ESP_LOGI(TAG, "process_text_formatting_simple: Processed text with %zu newlines", newline_count);
+    
+    return processed_text;
 }
 
 // LCD Hardware Configuration
@@ -1108,8 +1174,30 @@ void process_data(const char *data) {
                     ESP_LOGI(TAG, "Using default font size 18");
                 }
                 
+                // Парсим выравнивание текста (опционально)
+                lv_text_align_t text_align = LV_TEXT_ALIGN_CENTER; // По умолчанию по центру
+                cJSON *text_align_json = cJSON_GetObjectItemCaseSensitive(root, "text_align");
+                if (cJSON_IsString(text_align_json) && text_align_json->valuestring != NULL) {
+                    const char *align_str = text_align_json->valuestring;
+                    
+                    if (strcmp(align_str, "left") == 0) {
+                        text_align = LV_TEXT_ALIGN_LEFT;
+                    } else if (strcmp(align_str, "center") == 0) {
+                        text_align = LV_TEXT_ALIGN_CENTER;
+                    } else if (strcmp(align_str, "right") == 0) {
+                        text_align = LV_TEXT_ALIGN_RIGHT;
+                    } else {
+                        ESP_LOGW(TAG, "Invalid text_align '%s', using default center", align_str);
+                        text_align = LV_TEXT_ALIGN_CENTER;
+                    }
+                    
+                    ESP_LOGI(TAG, "Text align set to %s", align_str);
+                } else {
+                    ESP_LOGI(TAG, "Using default text align center");
+                }
+                
                 // Создаем QR код с текстом
-                bool success = create_qr_with_text_simple(content_copy, qr_text_data, qr_color, screen_bg_color, text_color, font_size);
+                bool success = create_qr_with_text_simple(content_copy, qr_text_data, qr_color, screen_bg_color, text_color, font_size, text_align);
                 
                 // Освобождаем память
                 if (qr_text_data != NULL) {
