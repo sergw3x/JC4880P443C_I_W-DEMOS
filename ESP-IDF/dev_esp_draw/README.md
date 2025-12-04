@@ -14,14 +14,12 @@ ESP32 приложение для отображения QR-кодов и тек
 * ESP32-P4
 * OV02C10 - color CMOS 2 megapixel image sensor
 * 4.3 inch ESP32P4 module JC4880P443C_I_W/Y
-* 4.3-inch color screen, support 24 BIT RGB 16.7M color display, display
-  rich colors
+* 4.3-inch color screen, support 24 BIT RGB 16.7M color display, display rich colors
 * IPS 480x800 resolution
 * Driver chip ST7701S
 * The sample program has been programmed in the factory and can be plugged in
 * With TF card slot for easy expansion storage
-* Provide arduino library functions and sample programs to facilitate
-  rapid secondary development
+* Provide arduino library functions and sample programs to facilitate rapid secondary development
 * Support one-click download program
 * Lithium battery interface circuit
 * Military-grade process standards, long-term stable work
@@ -87,22 +85,6 @@ To exit the serial monitor, type ``Ctrl-]``.
 
 - Отображает текст в центре экрана
 
-## Шрифты
-
-для генерации внутри скрипта ``generate_lvgl_font.sh`` используется [lv_font_conv](https://github.com/lvgl/lv_font_conv)
-— сгенерирует шрифты от 12 до 40 с шагом 4.
-
-### Генерация набора шрифтов
-
-```bash
-./generate_lvgl_font.sh --start 20 --end 32 --step 4
-```
-
-### Генерация конкретного щрифта
-
-```bash
-lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 24 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_24_cyr.c
-```
 
 ## ✅ type: qr_text
 
@@ -133,4 +115,21 @@ lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 24 --bpp 4 --f
   "type": "clear",
   "data": ""
 }
+```
+
+## Шрифты
+
+для генерации внутри скрипта ``generate_lvgl_font.sh`` используется [lv_font_conv](https://github.com/lvgl/lv_font_conv)
+— сгенерирует шрифты от 12 до 40 с шагом 4.
+
+### Генерация набора шрифтов
+
+```bash
+./generate_lvgl_font.sh --start 20 --end 32 --step 4
+```
+
+### Генерация конкретного щрифта
+
+```bash
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 24 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_24_cyr.c
 ```
