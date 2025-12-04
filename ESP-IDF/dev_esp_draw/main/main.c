@@ -47,6 +47,18 @@ static         lv_disp_t              *lvgl_disp = NULL;
 static         lv_color_t             *buf1 = NULL;
 static         lv_color_t             *buf2 = NULL;
 
+extern const lv_font_t font_roboto_24_cyr;
+extern const lv_font_t font_roboto_28_cyr;
+extern const lv_font_t font_roboto_32_cyr;
+extern const lv_font_t font_roboto_36_cyr;
+extern const lv_font_t font_roboto_40_cyr;
+extern const lv_font_t font_roboto_44_cyr;
+extern const lv_font_t font_roboto_48_cyr;
+extern const lv_font_t font_roboto_52_cyr;
+extern const lv_font_t font_roboto_56_cyr;
+extern const lv_font_t font_roboto_60_cyr;
+extern const lv_font_t font_roboto_64_cyr;
+extern const lv_font_t font_roboto_68_cyr;
 
 // Безопасная функция для удаления label объекта с проверкой мьютекса
 static void safe_label_delete(void) {
@@ -149,6 +161,8 @@ static bool create_label_with_text(const char *text, lv_color_t bg_color) {
     } else {
         lv_label_set_text(label_obj, " ");
     }
+
+    lv_obj_set_style_text_font(label_obj, &font_roboto_24_cyr, LV_PART_MAIN);
     
     // Принудительно обновляем дисплей
     lv_refr_now(lvgl_disp);
@@ -174,25 +188,36 @@ static lv_obj_t *qr_text_label_obj = NULL;
 static const lv_font_t* get_font_by_size_simple(uint16_t font_size) {
     // LVGL встроенные шрифты
     switch (font_size) {
-        case 10: return &lv_font_montserrat_10;
-        case 14: return &lv_font_montserrat_14;
-        case 16: return &lv_font_montserrat_16;
-        case 18: return &lv_font_montserrat_18;  // default
-        case 20: return &lv_font_montserrat_20;
-        case 24: return &lv_font_montserrat_24;
-        case 28: return &lv_font_montserrat_28;
-        case 32: return &lv_font_montserrat_32;
+        case 24: return &font_roboto_24_cyr;
+        case 28: return &font_roboto_28_cyr;
+        case 32: return &font_roboto_32_cyr;
+        case 36: return &font_roboto_36_cyr;
+        case 40: return &font_roboto_40_cyr;
+        case 44: return &font_roboto_44_cyr;
+        case 48: return &font_roboto_48_cyr;
+        case 52: return &font_roboto_52_cyr;
+        case 56: return &font_roboto_56_cyr;
+        case 60: return &font_roboto_60_cyr;
+        case 64: return &font_roboto_64_cyr;
+        case 68: return &font_roboto_68_cyr;
         default:
             // Автоматический выбор ближайшего доступного размера
-            if (font_size < 14) return &lv_font_montserrat_10;
-            if (font_size > 32) return &lv_font_montserrat_32;
-            
+            if (font_size < 24) return &font_roboto_24_cyr;
+            if (font_size > 68) return &font_roboto_68_cyr;
+
             // Для промежуточных значений выбираем ближайший
-            if (font_size <= 16) return &lv_font_montserrat_16;
-            if (font_size <= 20) return &lv_font_montserrat_20;
-            if (font_size <= 24) return &lv_font_montserrat_24;
-            if (font_size <= 28) return &lv_font_montserrat_28;
-            return &lv_font_montserrat_32;
+            if (font_size <= 28) return &font_roboto_28_cyr;
+            if (font_size <= 32) return &font_roboto_32_cyr;
+            if (font_size <= 36) return &font_roboto_36_cyr;
+            if (font_size <= 40) return &font_roboto_40_cyr;
+            if (font_size <= 44) return &font_roboto_44_cyr;
+            if (font_size <= 48) return &font_roboto_48_cyr;
+            if (font_size <= 52) return &font_roboto_52_cyr;
+            if (font_size <= 56) return &font_roboto_56_cyr;
+            if (font_size <= 60) return &font_roboto_60_cyr;
+            if (font_size <= 64) return &font_roboto_64_cyr;
+            if (font_size <= 68) return &font_roboto_68_cyr;
+            return &font_roboto_44_cyr;
     }
 }
 
@@ -308,6 +333,7 @@ static bool create_qr_with_text_simple(const char *qr_data, const char *text_dat
         // Устанавливаем размер шрифта
         const lv_font_t* selected_font = get_font_by_size_simple(font_size);
         lv_style_set_text_font(&label_style, selected_font);
+//        lv_obj_set_style_text_font(label_obj, &font_roboto_24_cyr, LV_PART_MAIN);
         
         ESP_LOGI(TAG, "create_qr_with_text_simple: Using font size %u (font: %p)", font_size, selected_font);
         
@@ -1159,12 +1185,12 @@ void process_data(const char *data) {
                     uint16_t requested_size = (uint16_t)font_size_json->valuedouble;
                     
                     // Валидация диапазона размера шрифта
-                    if (requested_size < 10) {
-                        ESP_LOGW(TAG, "Font size %u too small, using minimum 10", requested_size);
-                        font_size = 10;
-                    } else if (requested_size > 32) {
-                        ESP_LOGW(TAG, "Font size %u too large, using maximum 32", requested_size);
-                        font_size = 32;
+                    if (requested_size < 24) {
+                        ESP_LOGW(TAG, "Font size %u too small, using minimum 24", requested_size);
+                        font_size = 24;
+                    } else if (requested_size > 68) {
+                        ESP_LOGW(TAG, "Font size %u too large, using maximum 68", requested_size);
+                        font_size = 68;
                     } else {
                         font_size = requested_size;
                     }

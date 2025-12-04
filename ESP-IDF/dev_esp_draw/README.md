@@ -1,3 +1,32 @@
+
+```bash
+./generate_lvgl_font.sh --start 20 --end 32 --step 4
+```
+
+```bash
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 24 --bpp 4 --format lvgl --range 0x0400-0x04FF --output main/fonts/font_roboto_24_cyr.c
+```
+
+```bash
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 24 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_24_cyr.c
+```
+
+```bash
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 26 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_26_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 30 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_30_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 34 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_34_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 38 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_38_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 42 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_42_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 44 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_44_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 48 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_48_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 52 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_52_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 54 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_54_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 58 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_58_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 60 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_60_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 62 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_62_cyr.c &&
+lv_font_conv --font fonts/Roboto/static/Roboto-Regular.ttf --size 64 --bpp 4 --format lvgl --range 0x20-0x7E,0xA0,0x0400-0x04FF --output main/fonts/font_roboto_64_cyr.c
+```
+
 # LVGL Demo v8
 
 [中文版本](./README_CN.md)

@@ -1,15 +1,11 @@
+file(GLOB FONT_SOURCES "fonts/*.c")
+
 idf_component_register(
     SRCS "main.c"
-         "command_processor.c"
-         "display_manager.c"
-         "lvgl_utils.c"
-         "qr_commands.c"
-         "text_commands.c"
-         "clear_commands.c"
-         "qr_text_commands.c"
-         "usb_rx_improved.c"
-         "hardware_manager.c"
+        ${FONT_SOURCES}
     INCLUDE_DIRS ".")
+
+target_compile_definitions(${COMPONENT_LIB} PRIVATE LV_LVGL_H_INCLUDE_SIMPLE)
 
 idf_component_get_property(LVGL_LIB lvgl__lvgl COMPONENT_LIB)
 target_compile_options(
