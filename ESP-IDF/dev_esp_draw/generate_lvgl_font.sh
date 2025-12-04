@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Настройки по умолчанию
-INPUT_FONT="fonts/Roboto/static/Roboto-Regular.ttf"
+INPUT_FONT="fonts/Roboto-Regular.ttf"
 OUTPUT_DIR="main/fonts"
 FONT_NAME="roboto"
 RANGE="0x20-0x7E,0xA0,0x0400-0x04FF"
