@@ -19,6 +19,9 @@
 #include "lvgl.h"
 
 #include "images/hex_logo.c"
+#include "images/logo_caption.c"
+#include "images/checkin_ok.c"
+#include "images/checkin_false.c"
 
 #if LV_USE_QRCODE
 #include "extra/libs/qrcode/lv_qrcode.h"
@@ -945,6 +948,18 @@ void async_display_text(void *data) {
     MEASURE_FUNCTION_END("Async_display_text");
 }
 
+void show_logo(){
+    lv_obj_t * img = lv_img_create(lv_scr_act());
+    lv_img_set_src(img, &hex_logo);
+    lv_obj_align(img, LV_ALIGN_TOP_MID, 0, 150); // поднимаем на 50 пикселей от верха
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_white(), 0);
+
+
+    lv_obj_t * img2 = lv_img_create(lv_scr_act());
+    lv_img_set_src(img2, &logo_caption);
+    lv_obj_align(img2, LV_ALIGN_BOTTOM_MID, 0, -120); // 20 пикселей от нижнего края
+}
+
 void process_data(const char *data) {
     MEASURE_FUNCTION_START();
 
@@ -974,7 +989,7 @@ void process_data(const char *data) {
         size_t content_len = strlen(content->valuestring);
 
         // Для команды clear разрешаем пустой контент
-        if (strcmp(type->valuestring, "clear") != 0 && content_len == 0) {
+        if (strcmp(type->valuestring, "clear") != 0 && strcmp(type->valuestring, "logo") != 0 && content_len == 0) {
             ESP_LOGE(TAG, "Invalid content length: %zu bytes", content_len);
             cJSON_Delete(root);
             MEASURE_FUNCTION_END("Process_data_invalid_length");
@@ -1199,6 +1214,156 @@ void process_data(const char *data) {
             }
 
             free(content_copy); // Освобождаем память
+        } else if (strcmp(type->valuestring, "checkin") == 0) {
+            ESP_LOGI(TAG, "checkin command received");
+
+//            content_copy - тут будет id ошибки
+//            text - тут сообщение
+
+            ESP_LOGI(TAG, "image with text - checkin: '%s'", content_copy);
+
+            // Парсим дополнительные параметры из JSON
+            cJSON *text_json = cJSON_GetObjectItemCaseSensitive(root, "text");
+            char *caption = NULL;
+            if (cJSON_IsString(text_json) && text_json->valuestring != NULL) {
+                caption = strdup(text_json->valuestring);
+            }
+
+            // Парсим цвета из JSON (опциональные поля)
+            lv_color_t qr_color = lv_color_black(); // По умолчанию черный
+            lv_color_t screen_bg_color = lv_color_white(); // По умолчанию белый
+            lv_color_t text_color = lv_palette_main(LV_PALETTE_BLUE); // По умолчанию синий
+
+            cJSON *bg_color_json = cJSON_GetObjectItemCaseSensitive(root, "bg_color");
+            if (cJSON_IsString(bg_color_json)) {
+                screen_bg_color = parse_hex_color(bg_color_json->valuestring);
+            }
+
+            cJSON *text_color_json = cJSON_GetObjectItemCaseSensitive(root, "text_color");
+            if (cJSON_IsString(text_color_json)) {
+                text_color = parse_hex_color(text_color_json->valuestring);
+            }
+
+            // Парсим размер шрифта (опционально)
+            uint16_t font_size = 18; // По умолчанию
+            cJSON *font_size_json = cJSON_GetObjectItemCaseSensitive(root, "font_size");
+            if (cJSON_IsNumber(font_size_json)) {
+                uint16_t
+                        requested_size = (uint16_t)
+                font_size_json->valuedouble;
+
+                // Валидация диапазона размера шрифта
+                if (requested_size < 24) {
+                    ESP_LOGW(TAG, "Font size %u too small, using minimum 24", requested_size);
+                    font_size = 24;
+                } else if (requested_size > 68) {
+                    ESP_LOGW(TAG, "Font size %u too large, using maximum 68", requested_size);
+                    font_size = 68;
+                } else {
+                    font_size = requested_size;
+                }
+
+                ESP_LOGI(TAG, "Font size set to %u", font_size);
+            } else {
+                ESP_LOGI(TAG, "Using default font size 18");
+            }
+
+            // Парсим выравнивание текста (опционально)
+            lv_text_align_t text_align = LV_TEXT_ALIGN_CENTER; // По умолчанию по центру
+            cJSON *text_align_json = cJSON_GetObjectItemCaseSensitive(root, "text_align");
+            if (cJSON_IsString(text_align_json) && text_align_json->valuestring != NULL) {
+                const char *align_str = text_align_json->valuestring;
+
+                if (strcmp(align_str, "left") == 0) {
+                    text_align = LV_TEXT_ALIGN_LEFT;
+                } else if (strcmp(align_str, "center") == 0) {
+                    text_align = LV_TEXT_ALIGN_CENTER;
+                } else if (strcmp(align_str, "right") == 0) {
+                    text_align = LV_TEXT_ALIGN_RIGHT;
+                } else {
+                    ESP_LOGW(TAG, "Invalid text_align '%s', using default center", align_str);
+                    text_align = LV_TEXT_ALIGN_CENTER;
+                }
+
+                ESP_LOGI(TAG, "Text align set to %s", align_str);
+            } else {
+                ESP_LOGI(TAG, "Using default text align center");
+            }
+
+            // Очищаем существующие объекты
+            cleanup_qr_text_objects();
+
+            // Также очищаем другие QR объекты для консистентности
+            safe_qrcode_delete();
+            safe_label_delete();
+
+            // Очищаем экран и устанавливаем фон
+            lv_obj_clean(lv_scr_act());
+            lv_obj_set_style_bg_color(lv_scr_act(), screen_bg_color, 0);
+
+            // Создаем img
+
+            lv_obj_t * img = lv_img_create(lv_scr_act());
+
+            char *endptr;
+            long value = strtol(content_copy, &endptr, 10);
+            if (endptr == content_copy || *endptr != '\0') {
+                ESP_LOGE("TAG", "Invalid integer string: %s", content_copy);
+                return;
+            } else if (value > 0) {
+                ESP_LOGI("TAG", "Value %ld is greater than 0", value);
+                lv_img_set_src(img, &checkin_ok);
+            }else{
+                lv_img_set_src(img, &checkin_false);
+            }
+
+            lv_obj_align(img, LV_ALIGN_TOP_MID, 0, 100);
+
+            if (strlen(content_copy) == 0) {
+                return;
+            }
+
+            label_obj = lv_label_create(lv_scr_act());
+
+            if (label_obj == NULL) {
+                ESP_LOGE(TAG, "create_qr_unified: Failed to create label object!");
+
+                xSemaphoreGive(lvgl_mutex);
+                MEASURE_FUNCTION_END("Text_label_create_failed");
+                return;
+            }
+
+            // Настраиваем текстовый объект
+            lv_obj_set_width(label_obj, LV_PCT(90));
+            lv_obj_align(label_obj, LV_ALIGN_BOTTOM_MID, 0, -120); // 20 пикселей от нижнего края
+
+            const lv_font_t *selected_font = get_font_by_size_simple(font_size);
+
+            ESP_LOGI(TAG, "create_qr_unified: Using font size %u (font: %p)", font_size, selected_font);
+
+            // Применяем стили напрямую к объекту
+            lv_obj_set_style_text_font(label_obj, selected_font, 0);
+            lv_obj_set_style_text_align(label_obj, text_align, 0);
+            lv_obj_set_style_text_color(label_obj, text_color, 0);
+
+            // Обрабатываем и устанавливаем текст
+            char *processed_text = process_text_formatting_simple(caption);
+            lv_label_set_text(label_obj, processed_text ? processed_text : caption);
+
+            // Освобождаем память обработанного текста
+            if (processed_text != NULL) {
+                free(processed_text);
+            }
+
+            // Освобождаем память
+            if (caption != NULL) {
+                free(caption);
+            }
+
+            free(content_copy); // Освобождаем память
+
+            lv_refr_now(lvgl_disp); // create_label_with_text
+
         } else if (strcmp(type->valuestring, "clear") == 0) {
             ESP_LOGI(TAG, "Clearing screen command received");
 
@@ -1220,6 +1385,39 @@ void process_data(const char *data) {
                 qr_text_qrcode_obj = NULL;
                 qr_text_label_obj = NULL;
 
+
+                if (lvgl_disp) {
+                    ESP_LOGI(TAG, "Triggering display refresh for clear");
+                    lv_refr_now(lvgl_disp);
+                }
+
+                xSemaphoreGive(lvgl_mutex);
+            } else {
+                ESP_LOGW(TAG, "LVGL not initialized, cannot clear screen");
+            }
+
+            free(content_copy); // Освобождаем память
+        } else if (strcmp(type->valuestring, "logo") == 0) {
+            ESP_LOGI(TAG, "Clearing screen command received");
+
+            // Очищаем экран синхронно
+            if (lv_scr_act() != NULL && lvgl_disp != NULL) {
+                xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+
+                ESP_LOGI(TAG, "Cleaning screen objects");
+                lv_obj_clean(lv_scr_act());
+
+                ESP_LOGI(TAG, "Setting white background");
+                lv_obj_set_style_bg_color(lv_scr_act(), lv_color_white(), 0);
+
+                // Сбрасываем глобальные указатели объектов
+                label_obj = NULL;
+
+                qrcode_obj = NULL;
+                qr_text_qrcode_obj = NULL;
+                qr_text_label_obj = NULL;
+
+                show_logo();
 
                 if (lvgl_disp) {
                     ESP_LOGI(TAG, "Triggering display refresh for clear");
@@ -1446,10 +1644,9 @@ void app_main(void) {
     lv_obj_clean(lv_scr_act());
     lv_obj_set_style_bg_color(lv_scr_act(), lv_color_white(), 0);
 
-    lv_obj_t * img = lv_img_create(lv_scr_act());
-    lv_img_set_src(img, &hex_logo);
-    lv_obj_center(img);
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
+    // logo
+    show_logo();
+    // logo
 
     // Инициализация стилей
     lv_style_init(&label_style);
