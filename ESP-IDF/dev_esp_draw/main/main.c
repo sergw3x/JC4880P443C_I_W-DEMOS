@@ -18,6 +18,8 @@
 #include "cJSON.h"
 #include "lvgl.h"
 
+#include "images/hex_logo.c"
+
 #if LV_USE_QRCODE
 #include "extra/libs/qrcode/lv_qrcode.h"
 #endif
@@ -226,7 +228,7 @@ static void cleanup_qr_text_objects(void) {
         lv_obj_del(qr_text_qrcode_obj);
         qr_text_qrcode_obj = NULL;
     }
-    
+
     if (qr_text_label_obj != NULL && lv_obj_is_valid(qr_text_label_obj)) {
         lv_obj_del(qr_text_label_obj);
         qr_text_label_obj = NULL;
@@ -255,12 +257,12 @@ static bool create_qr_unified(const qr_config_t *config) {
         return false;
     }
 
-    ESP_LOGI(TAG, "create_qr_unified: QR data: '%s', Text: '%s'", 
+    ESP_LOGI(TAG, "create_qr_unified: QR data: '%s', Text: '%s'",
              config->qr_data, config->text_data ? config->text_data : "NULL");
 
     // Очищаем существующие объекты
     cleanup_qr_text_objects();
-    
+
     // Также очищаем другие QR объекты для консистентности
     safe_qrcode_delete();
     safe_label_delete();
@@ -276,7 +278,7 @@ static bool create_qr_unified(const qr_config_t *config) {
     // Вычисляем размеры и позиции QR кода
     uint16_t qr_size;
     uint16_t qr_y;
-    
+
     if (config->text_data != NULL && strlen(config->text_data) > 0) {
         // Режим QR + текст
         qr_size = (uint16_t)(screen_width * 0.7);  // 70% ширины экрана
@@ -341,13 +343,13 @@ static bool create_qr_unified(const qr_config_t *config) {
 
         // Настраиваем текстовый объект
         lv_obj_set_width(qr_text_label_obj, screen_width - 40); // Отступы по бокам
-        
+
         uint16_t text_y = qr_y + qr_size + 30; // Текст под QR кодом с отступом
         lv_obj_set_pos(qr_text_label_obj, 20, text_y);
 
         // Настраиваем текстовый объект напрямую без временного стиля
         const lv_font_t *selected_font = get_font_by_size_simple(config->font_size);
-        
+
         ESP_LOGI(TAG, "create_qr_unified: Using font size %u (font: %p)", config->font_size, selected_font);
 
         // Применяем стили напрямую к объекту
@@ -358,12 +360,12 @@ static bool create_qr_unified(const qr_config_t *config) {
         // Обрабатываем и устанавливаем текст
         char *processed_text = process_text_formatting_simple(config->text_data);
         lv_label_set_text(qr_text_label_obj, processed_text ? processed_text : config->text_data);
-        
+
         // Освобождаем память обработанного текста
         if (processed_text != NULL) {
             free(processed_text);
         }
-        
+
         text_created = true;
     }
 
@@ -371,7 +373,7 @@ static bool create_qr_unified(const qr_config_t *config) {
     lv_refr_now(lvgl_disp);
 
     xSemaphoreGive(lvgl_mutex);
-    
+
     const char *mode = text_created ? "QR+Text" : "QR only";
     ESP_LOGI(TAG, "create_qr_unified: Completed successfully (%s)", mode);
 
@@ -848,15 +850,15 @@ static void set_object_visibility(lv_obj_t *obj, bool visible, const char *obj_n
         ESP_LOGW(TAG, "Cannot set visibility: invalid parameters");
         return;
     }
-    
+
     if (visible && !lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) {
         return; // Уже видимый
     }
-    
+
     if (!visible && lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) {
         return; // Уже скрытый
     }
-    
+
     if (visible) {
         lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
         ESP_LOGI(TAG, "%s shown", obj_name);
@@ -869,7 +871,7 @@ static void set_object_visibility(lv_obj_t *obj, bool visible, const char *obj_n
 // Оптимизированные функции для обратной совместимости
 void lv_label_hide(void) {
     MEASURE_FUNCTION_START();
-    
+
     WITH_LVGL_MUTEX(100, {
         if (label_obj != NULL) {
             set_object_visibility(label_obj, false, "label");
@@ -877,13 +879,13 @@ void lv_label_hide(void) {
             ESP_LOGW(TAG, "Cannot hide label: object is NULL");
         }
     });
-    
+
     MEASURE_FUNCTION_END("LV_label_hide");
 }
 
 void lv_label_show(void) {
     MEASURE_FUNCTION_START();
-    
+
     WITH_LVGL_MUTEX(100, {
         if (label_obj != NULL) {
             set_object_visibility(label_obj, true, "label");
@@ -891,7 +893,7 @@ void lv_label_show(void) {
             ESP_LOGW(TAG, "Cannot show label: object is NULL");
         }
     });
-    
+
     MEASURE_FUNCTION_END("LV_label_show");
 }
 
@@ -1028,7 +1030,7 @@ void process_data(const char *data) {
                 .font_size = 24,  // Не используется для QR only
                 .text_align = LV_TEXT_ALIGN_CENTER  // Не используется для QR only
             };
-            
+
             bool success = create_qr_unified(&qr_config);
 
             if (success) {
@@ -1172,7 +1174,7 @@ void process_data(const char *data) {
                 .font_size = font_size,
                 .text_align = text_align
             };
-            
+
             bool success = create_qr_unified(&qr_text_config);
 
             // Освобождаем память
@@ -1291,7 +1293,7 @@ void usb_rx_task(void *arg) {
 // Централизованная функция очистки ресурсов
 static void cleanup_resources(void) {
     ESP_LOGI(TAG, "Cleaning up application resources");
-    
+
     // Очищаем LVGL объекты
     safe_label_delete();
 #if LV_USE_QRCODE
@@ -1307,7 +1309,7 @@ static void cleanup_resources(void) {
         heap_caps_free(buf1);
         buf1 = NULL;
     }
-    
+
     if (buf2 != NULL) {
         heap_caps_free(buf2);
         buf2 = NULL;
@@ -1332,17 +1334,17 @@ static bool validate_init_params(void) {
         ESP_LOGE(TAG, "Invalid LCD resolution: %dx%d", config.lcd_h_res, config.lcd_v_res);
         return false;
     }
-    
+
     if (config.lvgl_buffer_factor == 0) {
         ESP_LOGE(TAG, "Invalid LVGL buffer factor: %lu", config.lvgl_buffer_factor);
         return false;
     }
-    
+
     if (config.backlight_level > 100) {
         ESP_LOGW(TAG, "Clamping backlight level from %u to 100", config.backlight_level);
         ((app_config_t*)&config)->backlight_level = 100;
     }
-    
+
     return true;
 }
 
@@ -1357,12 +1359,12 @@ void app_main(void) {
 
     // Инициализируем дисплей
     init_lcd();
-    
+
     // Проверка успешности инициализации дисплея
     if (disp_panel == NULL) {
         ESP_LOGW(TAG, "LCD initialization failed, continuing with limited functionality");
     }
-    
+
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // Включаем подсветку
@@ -1380,7 +1382,7 @@ void app_main(void) {
         cleanup_resources();
         return;
     }
-    
+
     uint32_t buf_size = (uint32_t)(screen_pixels / config.lvgl_buffer_factor);
 
     ESP_LOGI(TAG, "Using LVGL buffer size: %lu pixels (%.1f KB)",
@@ -1392,7 +1394,7 @@ void app_main(void) {
         ESP_LOGW(TAG, "Failed to allocate SPIRAM buffer for buf1, trying regular RAM");
         buf1 = heap_caps_malloc(buf_size * sizeof(lv_color_t), MALLOC_CAP_DEFAULT);
     }
-    
+
     buf2 = heap_caps_malloc(buf_size * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
     if (buf2 == NULL) {
         ESP_LOGW(TAG, "Failed to allocate SPIRAM buffer for buf2, trying regular RAM");
@@ -1433,7 +1435,7 @@ void app_main(void) {
         esp_lcd_dpi_panel_event_callbacks_t cbs = {
                 .on_color_trans_done = test_notify_refresh_ready,
         };
-        
+
         esp_err_t ret = esp_lcd_dpi_panel_register_event_callbacks(disp_panel, &cbs, &disp_drv);
         if (ret != ESP_OK) {
             ESP_LOGW(TAG, "Failed to register DPI callbacks: %s", esp_err_to_name(ret));
@@ -1443,6 +1445,11 @@ void app_main(void) {
     // Очищаем экран и устанавливаем белый фон
     lv_obj_clean(lv_scr_act());
     lv_obj_set_style_bg_color(lv_scr_act(), lv_color_white(), 0);
+
+    lv_obj_t * img = lv_img_create(lv_scr_act());
+    lv_img_set_src(img, &hex_logo);
+    lv_obj_center(img);
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
 
     // Инициализация стилей
     lv_style_init(&label_style);
@@ -1472,12 +1479,12 @@ void app_main(void) {
     ret = xTaskCreate(usb_rx_task, "usb_rx_task", 4096, NULL, 5, &usb_rx_task_handle);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "Failed to create USB RX task");
-        
+
         // Очищаем созданную задачу LVGL
         if (lvgl_task_handle != NULL) {
             vTaskDelete(lvgl_task_handle);
         }
-        
+
         cleanup_resources();
         return;
     }
@@ -1486,34 +1493,15 @@ void app_main(void) {
     ESP_LOGI(TAG, "Display: %dx%d", config.lcd_h_res, config.lcd_v_res);
     ESP_LOGI(TAG, "Backlight: %u%%", config.backlight_level);
     ESP_LOGI(TAG, "Waiting for JSON commands via USB...");
-    
-    /*
-     Поддерживаемые JSON команды:
-     
-     // QR коды (максимальный размер 80% экрана)
-     {"type": "qr", "data": "https://example.com"}
-     {"type": "qr", "data": "test", "qr_color": "#FF0000", "bg_color": "#00FF00"}
-     
-     // QR код с текстом
-     {"type": "qr_text", "data": "https://example.com", "text": "Visit website!"}
-     {"type": "qr_text", "data": "product-123", "text": "Product Info", 
-      "qr_color": "#FF0000", "bg_color": "#FFFF00", "text_color": "#0000FF"}
-     
-     // Текстовые команды
-     {"type": "text", "data": "Hello World"}
-     
-     // Очистка экрана
-     {"type": "clear", "data": ""}
-    */
 
     // Основной цикл с мониторингом состояния
     uint32_t main_loop_counter = 0;
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(10000)); // 10 секунд
-        
+
         // Периодическая проверка состояния каждую минуту
         if (++main_loop_counter % 6 == 0) {
-            ESP_LOGI(TAG, "System status: LVGL=%s, Display=%s", 
+            ESP_LOGI(TAG, "System status: LVGL=%s, Display=%s",
                      lvgl_disp ? "OK" : "FAIL",
                      disp_panel ? "OK" : "FAIL");
         }

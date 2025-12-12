@@ -1,7 +1,9 @@
 file(GLOB FONT_SOURCES "fonts/*.c")
+file(GLOB IMAGE_SOURCES "images/*.c")
 
 idf_component_register(
     SRCS "main.c"
+        ${IMAGE_SOURCES}
         ${FONT_SOURCES}
     INCLUDE_DIRS ".")
 
