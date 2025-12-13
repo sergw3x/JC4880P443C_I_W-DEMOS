@@ -2,7 +2,7 @@ file(GLOB FONT_SOURCES "fonts/*.c")
 file(GLOB IMAGE_SOURCES "images/*.c")
 
 idf_component_register(
-    SRCS "main.c"
+    SRCS "main.c" "logo.c" "utils.c"
         ${IMAGE_SOURCES}
         ${FONT_SOURCES}
     INCLUDE_DIRS ".")
