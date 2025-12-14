@@ -54,6 +54,12 @@ static void cleanup_qr_text_objects(void) {
         lv_obj_del(qr_text_label_obj);
         qr_text_label_obj = NULL;
     }
+
+    // Также очищаем другие QR объекты для консистентности
+    safe_qrcode_delete();
+    safe_label_delete();
+
+    lv_obj_clean(lv_scr_act());
 }
 
 // Унифицированная функция для создания QR кода с опциональным текстом
@@ -81,12 +87,7 @@ static bool create_qr_unified(const qr_config_t *config) {
     // Очищаем существующие объекты
     cleanup_qr_text_objects();
 
-    // Также очищаем другие QR объекты для консистентности
-    safe_qrcode_delete();
-    safe_label_delete();
-
-    // Очищаем экран и устанавливаем фон
-    lv_obj_clean(lv_scr_act());
+    // устанавливаем фон
     lv_obj_set_style_bg_color(lv_scr_act(), config->bg_color, 0);
 
     // Получаем размеры экрана
@@ -99,20 +100,20 @@ static bool create_qr_unified(const qr_config_t *config) {
 
     if (config->text_data != NULL && strlen(config->text_data) > 0) {
         // Режим QR + текст
-        qr_size = (uint16_t)(screen_width * 0.7);  // 70% ширины экрана
-        qr_y = screen_height * 0.2;                // QR код на 20% от верха
+        qr_size = (uint16_t)(screen_width * QR_SIZE_WIDTH_PERCENT);
+        qr_y = screen_height * QR_PADDING_TOP_PERCENT;             // QR код на 20% от верха
     } else {
-        // Режим только QR - используем максимальный размер 80%
-        qr_size = (uint16_t)(MIN(screen_width, screen_height) * 0.8);
+        // Режим только QR
+        qr_size = (uint16_t)(MIN(screen_width, screen_height) * QR_SIZE_WIDTH_PERCENT);
         if (qr_size < 100) qr_size = MIN(screen_width, screen_height);
         qr_y = (screen_height - qr_size) / 2;       // Центрируем по вертикали
     }
 
     // Ограничиваем максимальный размер
-    if (qr_size > screen_width * 0.8) qr_size = (uint16_t)(screen_width * 0.8);
+    if (qr_size > screen_width * 0.9) qr_size = (uint16_t)(screen_width * 0.9);
     if (qr_y < 10) qr_y = 10;
 
-#if LV_USE_QRCODE
+
     // Создаем QR код
     qr_text_qrcode_obj = lv_qrcode_create(lv_scr_act(), qr_size, config->qr_color, config->bg_color);
 
@@ -139,7 +140,6 @@ static bool create_qr_unified(const qr_config_t *config) {
         xSemaphoreGive(lvgl_mutex);
         return false;
     }
-#endif
 
     // Создаем текстовый объект если нужно
     bool text_created = false;
@@ -148,10 +148,10 @@ static bool create_qr_unified(const qr_config_t *config) {
 
         if (qr_text_label_obj == NULL) {
             ESP_LOGE(TAG, "Failed to create label object!");
-#if LV_USE_QRCODE
+
             lv_obj_del(qr_text_qrcode_obj);
             qr_text_qrcode_obj = NULL;
-#endif
+
             xSemaphoreGive(lvgl_mutex);
             return false;
         }
@@ -159,7 +159,7 @@ static bool create_qr_unified(const qr_config_t *config) {
         // Настраиваем текстовый объект
         lv_obj_set_width(qr_text_label_obj, screen_width - 40); // Отступы по бокам
 
-        uint16_t text_y = qr_y + qr_size + 30; // Текст под QR кодом с отступом
+        uint16_t text_y = qr_y + qr_size + 60; // Текст под QR кодом с отступом
         lv_obj_set_pos(qr_text_label_obj, 20, text_y);
 
         // Настраиваем текстовый объект напрямую без временного стиля
@@ -594,12 +594,6 @@ static bool create_label_with_text(const char *text, lv_color_t bg_color) {
 
     ESP_LOGI(TAG, "Starting with text='%s'", text);
 
-    // Удаляем существующие объекты
-    safe_label_delete();
-#if LV_USE_QRCODE
-    safe_qrcode_delete();
-#endif
-
     // Очищаем экран и устанавливаем фон
     lv_obj_clean(lv_scr_act());
     lv_obj_set_style_bg_color(lv_scr_act(), bg_color, 0);
@@ -666,7 +660,7 @@ void process_data_type_text(char *content_copy, cJSON *root)
     }
 
 
-    if (text == NULL) {
+    if (content_copy == NULL) {
         ESP_LOGE(TAG, "display_text: Text is NULL");
         return;
     }
@@ -690,6 +684,7 @@ void process_data_type_text(char *content_copy, cJSON *root)
     }
 
 }
+
 
 void process_data_type_qr_text(char *content_copy, cJSON *root)
 {

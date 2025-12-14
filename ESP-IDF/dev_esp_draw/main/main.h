@@ -40,6 +40,9 @@
 #define LCD_H_RES                                  (480)       // Horizontal resolution in pixels
 #define LCD_V_RES                                  (800)       // Vertical resolution in pixels
 
+#define QR_SIZE_WIDTH_PERCENT                       0.9        // Ширина QR 90%
+#define QR_PADDING_TOP_PERCENT                      0.2        // QR код на 20% от верха
+
 
 // Макросы для замера производительности
 #define PERF_TAG "PERF"
@@ -105,7 +108,7 @@ typedef struct {
 #define LEDC_FREQUENCY                             (25000)     // PWM frequency in Hz (25 KHz)
 
 // Communication Configuration
-#define USB_RX_BUFFER_SIZE                         256         // USB input buffer size in bytes
+#define USB_RX_BUFFER_SIZE                         1024        // USB input buffer size in bytes
 
 // QR Code Configuration
 #define QR_CONTENT_MAX_LENGTH                      (512)       // Maximum QR content length in bytes
